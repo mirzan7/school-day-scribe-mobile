@@ -4,16 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, BookOpen, Users, TrendingUp, CalendarDays, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Clock, BookOpen, Users, TrendingUp, CalendarDays, CheckCircle, XCircle, AlertCircle, Send, Eye } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 
 const ReportTab = () => {
-  const { getActivitiesByDate, getActiveDate, approveActivity } = useActivity();
+  const { getActivitiesByDate, getActiveDate, approveActivity, approveDayActivities, getDayApprovalStatus } = useActivity();
   const [selectedDate, setSelectedDate] = useState(new Date());
   
   const activeDates = getActiveDate().map(dateStr => new Date(dateStr));
   const selectedActivities = selectedDate ? getActivitiesByDate(format(selectedDate, 'yyyy-MM-dd')) : [];
+  const dayApprovalStatus = selectedDate ? getDayApprovalStatus(format(selectedDate, 'yyyy-MM-dd')) : null;
 
   const handleApprove = (activityId) => {
     approveActivity(activityId, 'Principal John Smith');
@@ -23,11 +24,21 @@ const ReportTab = () => {
     });
   };
 
+  const handleApproveDayActivities = () => {
+    const dateString = format(selectedDate, 'yyyy-MM-dd');
+    approveDayActivities(dateString, 'Principal John Smith');
+    toast({
+      title: "Day Activities Approved",
+      description: `All activities for ${format(selectedDate, 'MMMM d, yyyy')} have been approved.`,
+    });
+  };
+
   const getApprovalStats = () => {
     const total = selectedActivities.length;
     const approved = selectedActivities.filter(a => a.isApproved).length;
-    const pending = total - approved;
-    return { total, approved, pending };
+    const sentForApproval = selectedActivities.filter(a => a.sentForApproval && !a.isApproved).length;
+    const pending = total - approved - sentForApproval;
+    return { total, approved, pending, sentForApproval };
   };
 
   const stats = getApprovalStats();
@@ -80,7 +91,7 @@ const ReportTab = () => {
 
       {/* Approval Stats */}
       {selectedActivities.length > 0 && (
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-4 gap-2 mb-6">
           <Card className="bg-gray-50 border-gray-200">
             <CardContent className="p-3">
               <div className="text-center">
@@ -94,6 +105,14 @@ const ReportTab = () => {
               <div className="text-center">
                 <div className="text-lg font-bold text-green-700">{stats.approved}</div>
                 <div className="text-xs text-green-600">Approved</div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-yellow-50 border-yellow-200">
+            <CardContent className="p-3">
+              <div className="text-center">
+                <div className="text-lg font-bold text-yellow-700">{stats.sentForApproval}</div>
+                <div className="text-xs text-yellow-600">Sent</div>
               </div>
             </CardContent>
           </Card>
@@ -150,19 +169,80 @@ const ReportTab = () => {
                 {format(selectedDate, 'EEEE, MMMM d, yyyy')}
               </div>
               {selectedActivities.length > 0 && (
-                <div className="flex items-center space-x-2 text-sm">
+                <div className="flex items-center space-x-2 text-sm flex-wrap">
                   <Badge className="bg-green-100 text-green-800 border-green-200">
                     <CheckCircle className="h-3 w-3 mr-1" />
                     {stats.approved} Approved
+                  </Badge>
+                  <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                    <Send className="h-3 w-3 mr-1" />
+                    {stats.sentForApproval} Sent
                   </Badge>
                   <Badge className="bg-orange-100 text-orange-800 border-orange-200">
                     <AlertCircle className="h-3 w-3 mr-1" />
                     {stats.pending} Pending
                   </Badge>
+                  {dayApprovalStatus && (
+                    <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                      <Eye className="h-3 w-3 mr-1" />
+                      Day {dayApprovalStatus.isApproved ? 'Approved' : 'Sent'}
+                    </Badge>
+                  )}
                 </div>
               )}
             </CardTitle>
           </CardHeader>
+          
+          {/* Day Approval Section */}
+          {selectedActivities.length > 0 && dayApprovalStatus && !dayApprovalStatus.isApproved && (
+            <div className="px-4 pb-4 border-b">
+              <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-purple-100 rounded-full p-2">
+                        <Eye className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-purple-900">Day Approval Required</h3>
+                        <p className="text-sm text-purple-700">
+                          This day's activities were sent for approval on {format(new Date(dayApprovalStatus.sentAt), 'MMM d, yyyy')}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleApproveDayActivities}
+                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Approve Day
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          {dayApprovalStatus && dayApprovalStatus.isApproved && (
+            <div className="px-4 pb-4 border-b">
+              <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-green-100 rounded-full p-2">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-green-900">Day Approved</h3>
+                      <p className="text-sm text-green-700">
+                        All activities for this day were approved by {dayApprovalStatus.approvedBy} on {format(new Date(dayApprovalStatus.approvedAt), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           <CardContent className="p-4">
             {selectedActivities.length > 0 ? (
               <div className="space-y-3">
@@ -189,6 +269,11 @@ const ReportTab = () => {
                                 <CheckCircle className="h-3 w-3 mr-1" />
                                 Approved
                               </Badge>
+                            ) : activity.sentForApproval ? (
+                              <Badge className="text-xs bg-yellow-100 text-yellow-800 border-yellow-200">
+                                <Send className="h-3 w-3 mr-1" />
+                                Sent for Approval
+                              </Badge>
                             ) : (
                               <Badge className="text-xs bg-orange-100 text-orange-800 border-orange-200">
                                 <AlertCircle className="h-3 w-3 mr-1" />
@@ -206,9 +291,14 @@ const ReportTab = () => {
                               Approved by {activity.approvedBy} on {format(new Date(activity.approvedAt), 'MMM d, yyyy')}
                             </p>
                           )}
+                          {activity.sentForApproval && !activity.isApproved && activity.sentAt && (
+                            <p className="text-xs text-yellow-600 mt-2">
+                              Sent for approval on {format(new Date(activity.sentAt), 'MMM d, yyyy')}
+                            </p>
+                          )}
                         </div>
                         {/* Approval Action */}
-                        {!activity.isApproved && (
+                        {activity.sentForApproval && !activity.isApproved && (
                           <div className="absolute top-4 right-4">
                             <Button
                               size="sm"

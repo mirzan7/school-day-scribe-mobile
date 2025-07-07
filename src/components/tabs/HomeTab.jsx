@@ -10,12 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Clock, BookOpen, PlusCircle, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Clock, BookOpen, PlusCircle, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Send, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 const HomeTab = () => {
-  const { addActivity, getActivitiesByDate } = useActivity();
+  const { addActivity, getActivitiesByDate, sendForApproval, sendDayForApproval } = useActivity();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
@@ -108,6 +108,31 @@ const HomeTab = () => {
     setSelectedDate(newDate);
   };
 
+  const handleSendForApproval = (activityId, period) => {
+    sendForApproval(activityId);
+    toast({
+      title: "Sent for Approval",
+      description: `Period ${period} activity has been sent to the principal for approval.`,
+    });
+  };
+
+  const handleSendDayForApproval = () => {
+    if (todayActivities.length === 0) {
+      toast({
+        title: "No Activities",
+        description: "Please add some activities before sending for approval.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    sendDayForApproval(dateString);
+    toast({
+      title: "Day Sent for Approval",
+      description: `All activities for ${format(selectedDate, 'MMMM d, yyyy')} have been sent to the principal.`,
+    });
+  };
+
   return (
     <div className="p-4 space-y-4 pb-20">
       <div className="text-center mb-6 space-y-4">
@@ -175,16 +200,70 @@ const HomeTab = () => {
         </div>
       </div>
 
+      {/* Send Day for Approval */}
+      {todayActivities.length > 0 && (
+        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="bg-green-100 rounded-full p-2">
+                  <Send className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-green-900">Send Day for Approval</h3>
+                  <p className="text-sm text-green-700">
+                    Send all {todayActivities.length} activities to the principal for approval
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={handleSendDayForApproval}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Send All
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-3">
         {periods.map(period => {
           const activity = getPeriodActivity(period);
           return (
-            <Card key={period} className={`cursor-pointer transition-all ${activity ? 'border-blue-500 bg-blue-50' : 'hover:shadow-md border-gray-200'}`}>
+            <Card key={period} className={`transition-all ${
+              activity 
+                ? activity.sentForApproval 
+                  ? 'border-yellow-500 bg-yellow-50' 
+                  : activity.isApproved 
+                    ? 'border-green-500 bg-green-50'
+                    : 'border-blue-500 bg-blue-50'
+                : 'hover:shadow-md border-gray-200'
+            }`}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="bg-blue-100 rounded-full p-2">
-                      <Clock className="h-5 w-5 text-blue-600" />
+                    <div className={`rounded-full p-2 ${
+                      activity 
+                        ? activity.sentForApproval 
+                          ? 'bg-yellow-100' 
+                          : activity.isApproved 
+                            ? 'bg-green-100'
+                            : 'bg-blue-100'
+                        : 'bg-gray-100'
+                    }`}>
+                      {activity && activity.isApproved ? (
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <Clock className={`h-5 w-5 ${
+                          activity 
+                            ? activity.sentForApproval 
+                              ? 'text-yellow-600' 
+                              : 'text-blue-600'
+                            : 'text-gray-600'
+                        }`} />
+                      )}
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">Period {period}</h3>
@@ -192,20 +271,40 @@ const HomeTab = () => {
                         <div className="text-sm text-gray-600">
                           <p className="font-medium">{activity.class} - {activity.subject}</p>
                           <p className="text-gray-500 truncate">{activity.description}</p>
+                          {activity.sentForApproval && !activity.isApproved && (
+                            <p className="text-yellow-600 text-xs mt-1">Sent for approval</p>
+                          )}
+                          {activity.isApproved && (
+                            <p className="text-green-600 text-xs mt-1">Approved by {activity.approvedBy}</p>
+                          )}
                         </div>
                       ) : (
                         <p className="text-gray-500 text-sm">No activity added</p>
                       )}
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant={activity ? "outline" : "default"}
-                    onClick={() => handleAddActivity(period)}
-                    className="min-w-[80px]"
-                  >
-                    {activity ? 'Edit' : <><Plus className="h-4 w-4 mr-1" />Add</>}
-                  </Button>
+                  <div className="flex space-x-2">
+                    {activity && !activity.sentForApproval && !activity.isApproved && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleSendForApproval(activity.id, period)}
+                        className="text-green-600 border-green-300 hover:bg-green-50"
+                      >
+                        <Send className="h-4 w-4 mr-1" />
+                        Send
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant={activity ? "outline" : "default"}
+                      onClick={() => handleAddActivity(period)}
+                      className="min-w-[80px]"
+                      disabled={activity && activity.isApproved}
+                    >
+                      {activity ? (activity.isApproved ? 'Approved' : 'Edit') : <><Plus className="h-4 w-4 mr-1" />Add</>}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
