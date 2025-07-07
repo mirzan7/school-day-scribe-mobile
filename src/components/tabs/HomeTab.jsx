@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useActivity } from '@/contexts/ActivityContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,29 +11,33 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Clock, BookOpen, Calendar as CalendarIcon, ChevronLeft, ChevronRight, CheckCircle2, Send } from 'lucide-react';
+import { Plus, Clock, BookOpen, Calendar as CalendarIcon, ChevronLeft, ChevronRight, CheckCircle2, Send, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 
 const HomeTab = () => {
-  const { addActivity, getActivitiesByDate } = useActivity();
+  const { addActivity, getActivitiesByDate, getAllClasses, getAllSubjects, addCustomClass, addCustomSubject } = useActivity();
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isCustomClass, setIsCustomClass] = useState(false);
+  const [isCustomSubject, setIsCustomSubject] = useState(false);
   
   const [formData, setFormData] = useState({
     class: '',
     subject: '',
-    description: ''
+    description: '',
+    customClass: '',
+    customSubject: ''
   });
 
   const periods = Array.from({ length: 8 }, (_, i) => i + 1);
   const dateString = format(selectedDate, 'yyyy-MM-dd');
   const todayActivities = getActivitiesByDate(dateString);
 
-  const defaultClasses = ['6A', '6B', '7A', '7B', '8A', '8B', '9A', '9B', '10A', '10B'];
-  const defaultSubjects = ['Mathematics', 'Science', 'English', 'History', 'Geography', 'Physics', 'Chemistry', 'Biology'];
+  const allClasses = getAllClasses();
+  const allSubjects = getAllSubjects();
 
   const handleAddActivity = (period) => {
     setSelectedPeriod(period);
@@ -43,17 +48,26 @@ const HomeTab = () => {
       setFormData({
         class: existingActivity.class,
         subject: existingActivity.subject,
-        description: existingActivity.description
+        description: existingActivity.description,
+        customClass: '',
+        customSubject: ''
       });
+      setIsCustomClass(!allClasses.slice(0, 10).includes(existingActivity.class));
+      setIsCustomSubject(!allSubjects.slice(0, 8).includes(existingActivity.subject));
     } else {
-      setFormData({ class: '', subject: '', description: '' });
+      setFormData({ class: '', subject: '', description: '', customClass: '', customSubject: '' });
+      setIsCustomClass(false);
+      setIsCustomSubject(false);
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if (!selectedPeriod || !formData.class || !formData.subject || !formData.description) {
+    let finalClass = isCustomClass ? formData.customClass.trim() : formData.class;
+    let finalSubject = isCustomSubject ? formData.customSubject.trim() : formData.subject;
+    
+    if (!selectedPeriod || !finalClass || !finalSubject || !formData.description.trim()) {
       toast({
         title: "Missing Information",
         description: "Please fill in all fields",
@@ -62,21 +76,31 @@ const HomeTab = () => {
       return;
     }
 
+    // Add custom class/subject to lists if they're new
+    if (isCustomClass && formData.customClass.trim()) {
+      addCustomClass(formData.customClass.trim());
+    }
+    if (isCustomSubject && formData.customSubject.trim()) {
+      addCustomSubject(formData.customSubject.trim());
+    }
+
     addActivity({
       date: dateString,
       period: selectedPeriod,
-      class: formData.class,
-      subject: formData.subject,
-      description: formData.description
+      class: finalClass,
+      subject: finalSubject,
+      description: formData.description.trim()
     });
 
     toast({
-      title: "Activity Added & Sent",
-      description: `Period ${selectedPeriod} activity has been automatically sent for approval`,
+      title: "Activity Sent for Approval",
+      description: `Period ${selectedPeriod} activity has been sent to the principal for approval`,
     });
 
     setIsDialogOpen(false);
-    setFormData({ class: '', subject: '', description: '' });
+    setFormData({ class: '', subject: '', description: '', customClass: '', customSubject: '' });
+    setIsCustomClass(false);
+    setIsCustomSubject(false);
   };
 
   const getPeriodActivity = (period) => {
@@ -106,6 +130,24 @@ const HomeTab = () => {
     if (activity.sentForApproval) return <Send className="h-5 w-5 text-amber-600" />;
     return <Clock className="h-5 w-5 text-blue-600" />;
   };
+
+  // Show different view for principal
+  if (user?.role === 'principal') {
+    return (
+      <div className="p-6 space-y-6 pb-24 max-w-2xl mx-auto">
+        <div className="text-center space-y-4 animate-fade-in">
+          <h2 className="text-2xl font-bold text-gray-900">Principal Dashboard</h2>
+          <p className="text-gray-600">Review and approve teacher activities</p>
+        </div>
+        <Card className="theme-bg-light border-0 minimal-shadow">
+          <CardContent className="p-6 text-center">
+            <h3 className="text-lg font-semibold theme-text mb-2">Access Reports Tab</h3>
+            <p className="text-gray-600">Go to the Reports tab to review and approve pending activities from teachers.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 pb-24 max-w-2xl mx-auto">
@@ -216,7 +258,7 @@ const HomeTab = () => {
                           <p className="font-medium text-gray-700">{activity.class} • {activity.subject}</p>
                           <p className="text-sm text-gray-600 line-clamp-1">{activity.description}</p>
                           {activity.isApproved && (
-                            <p className="text-xs theme-text font-medium">✓ Approved</p>
+                            <p className="text-xs theme-text font-medium">✓ Approved by {activity.approvedBy}</p>
                           )}
                           {activity.sentForApproval && !activity.isApproved && (
                             <p className="text-xs text-amber-600 font-medium">⏳ Pending approval</p>
@@ -252,31 +294,73 @@ const HomeTab = () => {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Class & Section</Label>
-              <Select value={formData.class} onValueChange={(value) => setFormData(prev => ({ ...prev, class: value }))}>
-                <SelectTrigger className="rounded-xl border-gray-200 h-12">
-                  <SelectValue placeholder="Select class" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {defaultClasses.map(cls => (
-                    <SelectItem key={cls} value={cls} className="rounded-lg">{cls}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-gray-700">Class & Section</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsCustomClass(!isCustomClass)}
+                  className="h-6 text-xs theme-text"
+                >
+                  <PlusCircle className="h-3 w-3 mr-1" />
+                  {isCustomClass ? 'Select from list' : 'Add new'}
+                </Button>
+              </div>
+              {isCustomClass ? (
+                <Input
+                  placeholder="Enter new class (e.g., 11-Science-A)"
+                  value={formData.customClass}
+                  onChange={(e) => setFormData(prev => ({ ...prev, customClass: e.target.value }))}
+                  className="rounded-xl border-gray-200 h-12"
+                />
+              ) : (
+                <Select value={formData.class} onValueChange={(value) => setFormData(prev => ({ ...prev, class: value }))}>
+                  <SelectTrigger className="rounded-xl border-gray-200 h-12">
+                    <SelectValue placeholder="Select class" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {allClasses.map(cls => (
+                      <SelectItem key={cls} value={cls} className="rounded-lg">{cls}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Subject</Label>
-              <Select value={formData.subject} onValueChange={(value) => setFormData(prev => ({ ...prev, subject: value }))}>
-                <SelectTrigger className="rounded-xl border-gray-200 h-12">
-                  <SelectValue placeholder="Select subject" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {defaultSubjects.map(subject => (
-                    <SelectItem key={subject} value={subject} className="rounded-lg">{subject}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-gray-700">Subject</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsCustomSubject(!isCustomSubject)}
+                  className="h-6 text-xs theme-text"
+                >
+                  <PlusCircle className="h-3 w-3 mr-1" />
+                  {isCustomSubject ? 'Select from list' : 'Add new'}
+                </Button>
+              </div>
+              {isCustomSubject ? (
+                <Input
+                  placeholder="Enter new subject (e.g., Computer Science)"
+                  value={formData.customSubject}
+                  onChange={(e) => setFormData(prev => ({ ...prev, customSubject: e.target.value }))}
+                  className="rounded-xl border-gray-200 h-12"
+                />
+              ) : (
+                <Select value={formData.subject} onValueChange={(value) => setFormData(prev => ({ ...prev, subject: value }))}>
+                  <SelectTrigger className="rounded-xl border-gray-200 h-12">
+                    <SelectValue placeholder="Select subject" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {allSubjects.map(subject => (
+                      <SelectItem key={subject} value={subject} className="rounded-lg">{subject}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -303,7 +387,7 @@ const HomeTab = () => {
                 type="submit" 
                 className="flex-1 theme-primary rounded-xl h-12 font-medium"
               >
-                Save & Send
+                Send for Approval
               </Button>
             </div>
           </form>

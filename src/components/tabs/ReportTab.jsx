@@ -1,22 +1,25 @@
 import React, { useState } from 'react';
 import { useActivity } from '@/contexts/ActivityContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, BookOpen, Users, TrendingUp, CalendarDays, CheckCircle2, Send, AlertCircle, BarChart3 } from 'lucide-react';
+import { Clock, BookOpen, Users, TrendingUp, CalendarDays, CheckCircle2, Send, AlertCircle, BarChart3, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 
 const ReportTab = () => {
-  const { getActivitiesByDate, getActiveDate, approveActivity } = useActivity();
+  const { getActivitiesByDate, getActiveDate, approveActivity, getPendingActivities } = useActivity();
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   
   const activeDates = getActiveDate().map(dateStr => new Date(dateStr));
   const selectedActivities = selectedDate ? getActivitiesByDate(format(selectedDate, 'yyyy-MM-dd')) : [];
+  const pendingActivities = getPendingActivities();
 
   const handleApprove = (activityId) => {
-    approveActivity(activityId, 'Principal');
+    approveActivity(activityId, user?.name || 'Principal');
     toast({
       title: "Activity Approved",
       description: "The activity has been approved successfully.",
@@ -44,6 +47,213 @@ const ReportTab = () => {
     },
   };
 
+  // Principal view - show pending approvals prominently
+  if (user?.role === 'principal') {
+    return (
+      <div className="p-6 space-y-6 pb-24 max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="text-center space-y-4 animate-fade-in">
+          <div className="w-16 h-16 theme-primary rounded-2xl flex items-center justify-center mx-auto minimal-shadow-lg">
+            <Shield className="h-8 w-8 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Principal Dashboard</h2>
+            <p className="text-gray-600">Review and approve teacher activities</p>
+          </div>
+        </div>
+
+        {/* Pending Approvals */}
+        {pendingActivities.length > 0 && (
+          <Card className="bg-amber-50 border-amber-200 border-0 minimal-shadow-lg animate-slide-up">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center space-x-2 text-amber-800">
+                <AlertCircle className="h-5 w-5" />
+                <span>Pending Approvals ({pendingActivities.length})</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {pendingActivities.slice(0, 3).map(activity => (
+                <div key={activity.id} className="bg-white rounded-xl p-4 minimal-shadow">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Badge variant="outline" className="text-xs">
+                          Period {activity.period}
+                        </Badge>
+                        <Badge className="text-xs bg-blue-100 text-blue-800 border-0">
+                          {activity.class}
+                        </Badge>
+                      </div>
+                      <p className="font-medium text-gray-900">{activity.subject}</p>
+                      <p className="text-sm text-gray-600 line-clamp-1">{activity.description}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {format(new Date(activity.date), 'MMM d')} • {activity.teacherName}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => handleApprove(activity.id)}
+                      className="theme-primary rounded-lg ml-3"
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-1" />
+                      Approve
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {pendingActivities.length > 3 && (
+                <p className="text-sm text-amber-700 text-center">
+                  +{pendingActivities.length - 3} more pending approvals
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Overview Stats */}
+        <div className="grid grid-cols-3 gap-4 animate-slide-up">
+          <Card className="theme-bg-light border-0 minimal-shadow">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold theme-text">{activeDates.length}</div>
+              <div className="text-sm text-gray-600">Active Days</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-amber-50 border-0 minimal-shadow">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-amber-700">{pendingActivities.length}</div>
+              <div className="text-sm text-gray-600">Pending</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-blue-50 border-0 minimal-shadow">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-blue-700">
+                {getActivitiesByDate(format(new Date(), 'yyyy-MM-dd')).length}
+              </div>
+              <div className="text-sm text-gray-600">Today</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Calendar and Activities */}
+        <Card className="border-0 minimal-shadow-lg animate-slide-up">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center space-x-2 text-lg">
+              <CalendarDays className="h-5 w-5 theme-text" />
+              <span>Review Activities by Date</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="flex justify-center pb-4">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                modifiers={modifiers}
+                modifiersStyles={modifiersStyles}
+                className="rounded-xl"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Selected Date Activities */}
+        {selectedDate && selectedActivities.length > 0 && (
+          <Card className="border-0 minimal-shadow-lg animate-slide-up">
+            <CardHeader className="theme-bg-light rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  <CalendarDays className="h-5 w-5 theme-text" />
+                  <span className="theme-text">{format(selectedDate, 'EEEE, MMM d')}</span>
+                </CardTitle>
+                <div className="flex items-center space-x-2">
+                  <Badge className="theme-primary-light theme-text border-0">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    {stats.approved}
+                  </Badge>
+                  <Badge className="bg-amber-100 text-amber-800 border-0">
+                    <Send className="h-3 w-3 mr-1" />
+                    {stats.pending}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {selectedActivities
+                  .sort((a, b) => a.period - b.period)
+                  .map(activity => (
+                    <div key={activity.id} className="group">
+                      <div className={`p-4 rounded-xl border-0 minimal-shadow transition-all duration-200 ${
+                        activity.isApproved 
+                          ? 'theme-primary-light' 
+                          : activity.sentForApproval 
+                            ? 'bg-amber-50' 
+                            : 'bg-gray-50'
+                      }`}>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3 flex-1">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                              activity.isApproved 
+                                ? 'bg-white/80' 
+                                : 'bg-white/60'
+                            }`}>
+                              {activity.isApproved ? (
+                                <CheckCircle2 className="h-5 w-5 theme-text" />
+                              ) : activity.sentForApproval ? (
+                                <Send className="h-5 w-5 text-amber-600" />
+                              ) : (
+                                <Clock className="h-5 w-5 text-gray-600" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <Badge variant="outline" className="text-xs border-gray-300">
+                                  Period {activity.period}
+                                </Badge>
+                                <Badge className="text-xs bg-blue-100 text-blue-800 border-0">
+                                  <Users className="h-3 w-3 mr-1" />
+                                  {activity.class}
+                                </Badge>
+                              </div>
+                              <h4 className="font-semibold text-gray-900 flex items-center mb-1">
+                                <BookOpen className="h-4 w-4 mr-2 text-blue-600" />
+                                {activity.subject}
+                              </h4>
+                              <p className="text-sm text-gray-600 leading-relaxed">{activity.description}</p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Teacher: {activity.teacherName}
+                              </p>
+                              {activity.isApproved && (
+                                <p className="text-xs theme-text mt-2 font-medium">
+                                  ✓ Approved by {activity.approvedBy}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {activity.sentForApproval && !activity.isApproved && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleApprove(activity.id)}
+                              className="theme-primary rounded-lg ml-3"
+                            >
+                              <CheckCircle2 className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  // Teacher view - same as before but with teacher perspective
   return (
     <div className="p-6 space-y-6 pb-24 max-w-2xl mx-auto">
       {/* Header */}
@@ -52,8 +262,8 @@ const ReportTab = () => {
           <BarChart3 className="h-8 w-8 text-white" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Activity Reports</h2>
-          <p className="text-gray-600">Track and manage your teaching activities</p>
+          <h2 className="text-2xl font-bold text-gray-900">My Activity Reports</h2>
+          <p className="text-gray-600">Track your teaching activities and approval status</p>
         </div>
       </div>
 
@@ -147,53 +357,46 @@ const ReportTab = () => {
                             ? 'bg-amber-50' 
                             : 'bg-gray-50'
                       }`}>
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-3 flex-1">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                              activity.isApproved 
-                                ? 'bg-white/80' 
-                                : 'bg-white/60'
-                            }`}>
-                              {activity.isApproved ? (
-                                <CheckCircle2 className="h-5 w-5 theme-text" />
-                              ) : activity.sentForApproval ? (
-                                <Send className="h-5 w-5 text-amber-600" />
-                              ) : (
-                                <Clock className="h-5 w-5 text-gray-600" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <Badge variant="outline" className="text-xs border-gray-300">
-                                  Period {activity.period}
-                                </Badge>
-                                <Badge className="text-xs bg-blue-100 text-blue-800 border-0">
-                                  <Users className="h-3 w-3 mr-1" />
-                                  {activity.class}
-                                </Badge>
-                              </div>
-                              <h4 className="font-semibold text-gray-900 flex items-center mb-1">
-                                <BookOpen className="h-4 w-4 mr-2 text-blue-600" />
-                                {activity.subject}
-                              </h4>
-                              <p className="text-sm text-gray-600 leading-relaxed">{activity.description}</p>
-                              {activity.isApproved && (
-                                <p className="text-xs theme-text mt-2 font-medium">
-                                  ✓ Approved by {activity.approvedBy}
-                                </p>
-                              )}
-                            </div>
+                        <div className="flex items-start space-x-3">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            activity.isApproved 
+                              ? 'bg-white/80' 
+                              : 'bg-white/60'
+                          }`}>
+                            {activity.isApproved ? (
+                              <CheckCircle2 className="h-5 w-5 theme-text" />
+                            ) : activity.sentForApproval ? (
+                              <Send className="h-5 w-5 text-amber-600" />
+                            ) : (
+                              <Clock className="h-5 w-5 text-gray-600" />
+                            )}
                           </div>
-                          {activity.sentForApproval && !activity.isApproved && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleApprove(activity.id)}
-                              className="theme-primary rounded-lg ml-3"
-                            >
-                              <CheckCircle2 className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <Badge variant="outline" className="text-xs border-gray-300">
+                                Period {activity.period}
+                              </Badge>
+                              <Badge className="text-xs bg-blue-100 text-blue-800 border-0">
+                                <Users className="h-3 w-3 mr-1" />
+                                {activity.class}
+                              </Badge>
+                            </div>
+                            <h4 className="font-semibold text-gray-900 flex items-center mb-1">
+                              <BookOpen className="h-4 w-4 mr-2 text-blue-600" />
+                              {activity.subject}
+                            </h4>
+                            <p className="text-sm text-gray-600 leading-relaxed">{activity.description}</p>
+                            {activity.isApproved && (
+                              <p className="text-xs theme-text mt-2 font-medium">
+                                ✓ Approved by {activity.approvedBy}
+                              </p>
+                            )}
+                            {activity.sentForApproval && !activity.isApproved && (
+                              <p className="text-xs text-amber-600 mt-2 font-medium">
+                                ⏳ Waiting for principal approval
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
