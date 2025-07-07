@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Clock, BookOpen } from 'lucide-react';
+import { Plus, Clock, BookOpen, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 const HomeTab = () => {
@@ -21,15 +21,19 @@ const HomeTab = () => {
   const [formData, setFormData] = useState({
     class: '',
     subject: '',
-    description: ''
+    description: '',
+    customClass: '',
+    customSubject: ''
   });
+  const [isCustomClass, setIsCustomClass] = useState(false);
+  const [isCustomSubject, setIsCustomSubject] = useState(false);
 
   const periods = Array.from({ length: 8 }, (_, i) => i + 1);
   const dateString = format(selectedDate, 'yyyy-MM-dd');
   const todayActivities = getActivitiesByDate(dateString);
 
-  const classes = ['6A', '6B', '7A', '7B', '8A', '8B', '9A', '9B', '10A', '10B'];
-  const subjects = ['Mathematics', 'Science', 'English', 'History', 'Geography', 'Physics', 'Chemistry', 'Biology'];
+  const defaultClasses = ['6A', '6B', '7A', '7B', '8A', '8B', '9A', '9B', '10A', '10B'];
+  const defaultSubjects = ['Mathematics', 'Science', 'English', 'History', 'Geography', 'Physics', 'Chemistry', 'Biology'];
 
   const handleAddActivity = (period: number) => {
     setSelectedPeriod(period);
@@ -41,16 +45,25 @@ const HomeTab = () => {
       setFormData({
         class: existingActivity.class,
         subject: existingActivity.subject,
-        description: existingActivity.description
+        description: existingActivity.description,
+        customClass: '',
+        customSubject: ''
       });
+      setIsCustomClass(!defaultClasses.includes(existingActivity.class));
+      setIsCustomSubject(!defaultSubjects.includes(existingActivity.subject));
     } else {
-      setFormData({ class: '', subject: '', description: '' });
+      setFormData({ class: '', subject: '', description: '', customClass: '', customSubject: '' });
+      setIsCustomClass(false);
+      setIsCustomSubject(false);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPeriod || !formData.class || !formData.subject || !formData.description) {
+    const finalClass = isCustomClass ? formData.customClass : formData.class;
+    const finalSubject = isCustomSubject ? formData.customSubject : formData.subject;
+    
+    if (!selectedPeriod || !finalClass || !finalSubject || !formData.description) {
       toast({
         title: "Missing Information",
         description: "Please fill in all fields",
@@ -62,8 +75,8 @@ const HomeTab = () => {
     addActivity({
       date: dateString,
       period: selectedPeriod,
-      class: formData.class,
-      subject: formData.subject,
+      class: finalClass,
+      subject: finalSubject,
       description: formData.description
     });
 
@@ -73,7 +86,9 @@ const HomeTab = () => {
     });
 
     setIsDialogOpen(false);
-    setFormData({ class: '', subject: '', description: '' });
+    setFormData({ class: '', subject: '', description: '', customClass: '', customSubject: '' });
+    setIsCustomClass(false);
+    setIsCustomSubject(false);
   };
 
   const getPeriodActivity = (period: number) => {
@@ -91,12 +106,12 @@ const HomeTab = () => {
         {periods.map(period => {
           const activity = getPeriodActivity(period);
           return (
-            <Card key={period} className={`cursor-pointer transition-all ${activity ? 'border-green-200 bg-green-50' : 'hover:shadow-md'}`}>
+            <Card key={period} className={`cursor-pointer transition-all ${activity ? 'border-primary bg-primary/5' : 'hover:shadow-md'}`}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="bg-blue-100 rounded-full p-2">
-                      <Clock className="h-5 w-5 text-blue-600" />
+                    <div className="bg-primary/10 rounded-full p-2">
+                      <Clock className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">Period {period}</h3>
@@ -129,36 +144,76 @@ const HomeTab = () => {
         <DialogContent className="w-full max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center">
-              <BookOpen className="h-5 w-5 mr-2 text-blue-600" />
+              <BookOpen className="h-5 w-5 mr-2 text-primary" />
               Period {selectedPeriod} Activity
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="class">Class & Section</Label>
-              <Select value={formData.class} onValueChange={(value) => setFormData(prev => ({ ...prev, class: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classes.map(cls => (
-                    <SelectItem key={cls} value={cls}>{cls}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="class">Class & Section</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsCustomClass(!isCustomClass)}
+                  className="h-6 text-xs"
+                >
+                  <PlusCircle className="h-3 w-3 mr-1" />
+                  {isCustomClass ? 'Select from list' : 'Add custom'}
+                </Button>
+              </div>
+              {isCustomClass ? (
+                <Input
+                  placeholder="Enter custom class (e.g., 11-Science-A)"
+                  value={formData.customClass}
+                  onChange={(e) => setFormData(prev => ({ ...prev, customClass: e.target.value }))}
+                />
+              ) : (
+                <Select value={formData.class} onValueChange={(value) => setFormData(prev => ({ ...prev, class: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {defaultClasses.map(cls => (
+                      <SelectItem key={cls} value={cls}>{cls}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="subject">Subject</Label>
-              <Select value={formData.subject} onValueChange={(value) => setFormData(prev => ({ ...prev, subject: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subjects.map(subject => (
-                    <SelectItem key={subject} value={subject}>{subject}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="subject">Subject</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsCustomSubject(!isCustomSubject)}
+                  className="h-6 text-xs"
+                >
+                  <PlusCircle className="h-3 w-3 mr-1" />
+                  {isCustomSubject ? 'Select from list' : 'Add custom'}
+                </Button>
+              </div>
+              {isCustomSubject ? (
+                <Input
+                  placeholder="Enter custom subject (e.g., Computer Science)"
+                  value={formData.customSubject}
+                  onChange={(e) => setFormData(prev => ({ ...prev, customSubject: e.target.value }))}
+                />
+              ) : (
+                <Select value={formData.subject} onValueChange={(value) => setFormData(prev => ({ ...prev, subject: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select subject" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {defaultSubjects.map(subject => (
+                      <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Activity Description</Label>

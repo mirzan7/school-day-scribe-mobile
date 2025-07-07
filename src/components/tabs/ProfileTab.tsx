@@ -4,13 +4,30 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Mail, LogOut, GraduationCap, BookOpen } from 'lucide-react';
+import { User, Mail, LogOut, GraduationCap, BookOpen, Lock, Camera, Settings } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 const ProfileTab = () => {
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleChangePassword = () => {
+    toast({
+      title: "Backend Required",
+      description: "Connect to Supabase to enable password changes and user management",
+      variant: "destructive"
+    });
+  };
+
+  const handleChangeAvatar = () => {
+    toast({
+      title: "Backend Required", 
+      description: "Connect to Supabase to enable avatar uploads and file storage",
+      variant: "destructive"
+    });
   };
 
   if (!user) return null;
@@ -20,20 +37,34 @@ const ProfileTab = () => {
   return (
     <div className="p-4 space-y-6 pb-20">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Profile</h2>
-        <p className="text-gray-600">Manage your account settings</p>
+        <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-6 mb-4">
+          <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+            <User className="h-8 w-8 text-primary" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Profile</h2>
+          <p className="text-muted-foreground">Manage your account and preferences</p>
+        </div>
       </div>
 
-      <Card>
+      <Card className="shadow-sm">
         <CardContent className="p-6">
           <div className="flex flex-col items-center text-center">
-            <Avatar className="w-20 h-20 mb-4">
-              <AvatarFallback className="text-xl bg-blue-600 text-white">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <h3 className="text-xl font-semibold text-gray-900 mb-1">{user.name}</h3>
-            <p className="text-gray-600 flex items-center">
+            <div className="relative mb-4">
+              <Avatar className="w-24 h-24">
+                <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <Button
+                size="sm"
+                className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0"
+                onClick={handleChangeAvatar}
+              >
+                <Camera className="h-4 w-4" />
+              </Button>
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-1">{user.name}</h3>
+            <p className="text-muted-foreground flex items-center">
               <Mail className="h-4 w-4 mr-1" />
               {user.email}
             </p>
@@ -41,48 +72,76 @@ const ProfileTab = () => {
         </CardContent>
       </Card>
 
+      {/* Account Settings */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center">
+            <Settings className="h-5 w-5 mr-2 text-primary" />
+            Account Settings
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Button
+            variant="outline"
+            className="w-full justify-start"
+            onClick={handleChangePassword}
+          >
+            <Lock className="h-4 w-4 mr-2" />
+            Change Password
+          </Button>
+          <Button
+            variant="outline" 
+            className="w-full justify-start"
+            onClick={handleChangeAvatar}
+          >
+            <Camera className="h-4 w-4 mr-2" />
+            Change Profile Photo
+          </Button>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4">
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center">
-              <GraduationCap className="h-5 w-5 mr-2 text-blue-600" />
+              <GraduationCap className="h-5 w-5 mr-2 text-primary" />
               Teacher Information
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Role</span>
-              <span className="font-medium">Teacher</span>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-muted-foreground">Role</span>
+              <span className="font-medium text-foreground">Teacher</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Department</span>
-              <span className="font-medium">General Education</span>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-muted-foreground">Department</span>
+              <span className="font-medium text-foreground">General Education</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Employee ID</span>
-              <span className="font-medium">T001</span>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-muted-foreground">Employee ID</span>
+              <span className="font-medium text-foreground">T001</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center">
-              <BookOpen className="h-5 w-5 mr-2 text-green-600" />
+              <BookOpen className="h-5 w-5 mr-2 text-primary" />
               Quick Stats
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600 mb-2">This week's activities</p>
-            <div className="bg-green-50 rounded-lg p-3 text-center">
-              <div className="text-2xl font-bold text-green-600">12</div>
-              <div className="text-sm text-green-700">Classes Taught</div>
+            <p className="text-sm text-muted-foreground mb-3">This week's activities</p>
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
+              <div className="text-3xl font-bold text-primary mb-1">12</div>
+              <div className="text-sm text-primary/80 font-medium">Classes Taught</div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="border-red-200">
+      <Card className="border-destructive/20 shadow-sm">
         <CardContent className="p-4">
           <Button 
             onClick={handleLogout}
@@ -97,7 +156,7 @@ const ProfileTab = () => {
       </Card>
 
       <div className="text-center pt-4">
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           School Reporter v1.0.0
         </p>
       </div>
