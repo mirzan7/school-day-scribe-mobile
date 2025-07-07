@@ -1,13 +1,32 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React from 'react';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { ActivityProvider } from '@/contexts/ActivityContext';
+import LoginScreen from '@/components/auth/LoginScreen';
+import SplashScreen from '@/components/auth/SplashScreen';
+import MainApp from '@/components/MainApp';
+
+const AppContent = () => {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <SplashScreen />;
+  }
+
+  if (!user) {
+    return <LoginScreen />;
+  }
+
+  return <MainApp />;
+};
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <AuthProvider>
+      <ActivityProvider>
+        <AppContent />
+      </ActivityProvider>
+    </AuthProvider>
   );
 };
 

@@ -1,0 +1,23 @@
+
+{
+  "name": "School Reporter",
+  "short_name": "SchoolReport",
+  "description": "School activity reporting app for teachers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#3b82f6",
+  "theme_color": "#1d4ed8",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/placeholder.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/placeholder.svg", 
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
