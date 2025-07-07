@@ -1,28 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export interface Activity {
-  id: string;
-  date: string;
-  period: number;
-  class: string;
-  subject: string;
-  description: string;
-  isApproved?: boolean;
-  approvedBy?: string;
-  approvedAt?: string;
-}
-
-interface ActivityContextType {
-  activities: Activity[];
-  addActivity: (activity: Omit<Activity, 'id'>) => void;
-  updateActivity: (id: string, activity: Omit<Activity, 'id'>) => void;
-  approveActivity: (id: string, approvedBy: string) => void;
-  getActivitiesByDate: (date: string) => Activity[];
-  getActiveDate: () => string[];
-}
-
-const ActivityContext = createContext<ActivityContextType | undefined>(undefined);
+const ActivityContext = createContext(undefined);
 
 export const useActivity = () => {
   const context = useContext(ActivityContext);
@@ -32,8 +10,8 @@ export const useActivity = () => {
   return context;
 };
 
-export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activities, setActivities] = useState<Activity[]>([]);
+export const ActivityProvider = ({ children }) => {
+  const [activities, setActivities] = useState([]);
 
   useEffect(() => {
     // Load activities from localStorage on mount
@@ -48,8 +26,8 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('schoolActivities', JSON.stringify(activities));
   }, [activities]);
 
-  const addActivity = (activity: Omit<Activity, 'id'>) => {
-    const newActivity: Activity = {
+  const addActivity = (activity) => {
+    const newActivity = {
       ...activity,
       id: Date.now().toString(),
       isApproved: false
@@ -57,7 +35,7 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setActivities(prev => [...prev, newActivity]);
   };
 
-  const updateActivity = (id: string, updatedActivity: Omit<Activity, 'id'>) => {
+  const updateActivity = (id, updatedActivity) => {
     setActivities(prev =>
       prev.map(activity =>
         activity.id === id ? { ...updatedActivity, id } : activity
@@ -65,7 +43,7 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
-  const approveActivity = (id: string, approvedBy: string) => {
+  const approveActivity = (id, approvedBy) => {
     setActivities(prev =>
       prev.map(activity =>
         activity.id === id 
@@ -80,7 +58,7 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
-  const getActivitiesByDate = (date: string) => {
+  const getActivitiesByDate = (date) => {
     return activities.filter(activity => activity.date === date);
   };
 

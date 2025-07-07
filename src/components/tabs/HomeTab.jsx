@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useActivity } from '@/contexts/ActivityContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +18,7 @@ const HomeTab = () => {
   const { addActivity, getActivitiesByDate } = useActivity();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -39,7 +38,7 @@ const HomeTab = () => {
   const defaultClasses = ['6A', '6B', '7A', '7B', '8A', '8B', '9A', '9B', '10A', '10B'];
   const defaultSubjects = ['Mathematics', 'Science', 'English', 'History', 'Geography', 'Physics', 'Chemistry', 'Biology'];
 
-  const handleAddActivity = (period: number) => {
+  const handleAddActivity = (period) => {
     setSelectedPeriod(period);
     setIsDialogOpen(true);
     
@@ -62,7 +61,7 @@ const HomeTab = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     const finalClass = isCustomClass ? formData.customClass : formData.class;
     const finalSubject = isCustomSubject ? formData.customSubject : formData.subject;
@@ -95,11 +94,11 @@ const HomeTab = () => {
     setIsCustomSubject(false);
   };
 
-  const getPeriodActivity = (period: number) => {
+  const getPeriodActivity = (period) => {
     return todayActivities.find(activity => activity.period === period);
   };
 
-  const navigateDate = (direction: 'prev' | 'next') => {
+  const navigateDate = (direction) => {
     const newDate = new Date(selectedDate);
     if (direction === 'prev') {
       newDate.setDate(newDate.getDate() - 1);
@@ -180,12 +179,12 @@ const HomeTab = () => {
         {periods.map(period => {
           const activity = getPeriodActivity(period);
           return (
-            <Card key={period} className={`cursor-pointer transition-all ${activity ? 'border-primary bg-primary/5' : 'hover:shadow-md'}`}>
+            <Card key={period} className={`cursor-pointer transition-all ${activity ? 'border-blue-500 bg-blue-50' : 'hover:shadow-md border-gray-200'}`}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="bg-primary/10 rounded-full p-2">
-                      <Clock className="h-5 w-5 text-primary" />
+                    <div className="bg-blue-100 rounded-full p-2">
+                      <Clock className="h-5 w-5 text-blue-600" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">Period {period}</h3>
@@ -218,7 +217,7 @@ const HomeTab = () => {
         <DialogContent className="w-full max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center">
-              <BookOpen className="h-5 w-5 mr-2 text-primary" />
+              <BookOpen className="h-5 w-5 mr-2 text-blue-600" />
               Period {selectedPeriod} Activity
             </DialogTitle>
           </DialogHeader>
