@@ -8,15 +8,19 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Clock, BookOpen, PlusCircle } from 'lucide-react';
+import { Plus, Clock, BookOpen, PlusCircle, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const HomeTab = () => {
   const { addActivity, getActivitiesByDate } = useActivity();
-  const [selectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     class: '',
@@ -95,11 +99,81 @@ const HomeTab = () => {
     return todayActivities.find(activity => activity.period === period);
   };
 
+  const navigateDate = (direction: 'prev' | 'next') => {
+    const newDate = new Date(selectedDate);
+    if (direction === 'prev') {
+      newDate.setDate(newDate.getDate() - 1);
+    } else {
+      newDate.setDate(newDate.getDate() + 1);
+    }
+    setSelectedDate(newDate);
+  };
+
   return (
     <div className="p-4 space-y-4 pb-20">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Today's Timetable</h2>
-        <p className="text-gray-600">{format(selectedDate, 'EEEE, MMMM d, yyyy')}</p>
+      <div className="text-center mb-6 space-y-4">
+        <h2 className="text-2xl font-bold text-gray-900">Daily Timetable</h2>
+        
+        {/* Date Navigation */}
+        <div className="flex items-center justify-center space-x-4">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigateDate('prev')}
+            className="h-8 w-8"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "min-w-[200px] justify-start text-left font-normal",
+                  !selectedDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDate ? format(selectedDate, 'EEEE, MMMM d, yyyy') : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => {
+                  if (date) {
+                    setSelectedDate(date);
+                    setIsCalendarOpen(false);
+                  }
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigateDate('next')}
+            className="h-8 w-8"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        {/* Quick Date Actions */}
+        <div className="flex justify-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedDate(new Date())}
+            className="text-xs"
+          >
+            Today
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-3">

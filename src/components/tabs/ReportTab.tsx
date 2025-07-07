@@ -4,15 +4,34 @@ import { useActivity } from '@/contexts/ActivityContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
-import { Clock, BookOpen, Users, TrendingUp, CalendarDays } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Clock, BookOpen, Users, TrendingUp, CalendarDays, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
+import { toast } from '@/hooks/use-toast';
 
 const ReportTab = () => {
-  const { getActivitiesByDate, getActiveDate } = useActivity();
+  const { getActivitiesByDate, getActiveDate, approveActivity } = useActivity();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
   const activeDates = getActiveDate().map(dateStr => new Date(dateStr));
   const selectedActivities = selectedDate ? getActivitiesByDate(format(selectedDate, 'yyyy-MM-dd')) : [];
+
+  const handleApprove = (activityId: string) => {
+    approveActivity(activityId, 'Principal John Smith');
+    toast({
+      title: "Activity Approved",
+      description: "The activity has been approved by the principal.",
+    });
+  };
+
+  const getApprovalStats = () => {
+    const total = selectedActivities.length;
+    const approved = selectedActivities.filter(a => a.isApproved).length;
+    const pending = total - approved;
+    return { total, approved, pending };
+  };
+
+  const stats = getApprovalStats();
 
   const modifiers = {
     active: activeDates,
@@ -48,13 +67,13 @@ const ReportTab = () => {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-secondary/50">
+        <Card className="bg-green-50 border-green-200">
           <CardContent className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-secondary-foreground">
+              <div className="text-2xl font-bold text-green-700">
                 {getActivitiesByDate(format(new Date(), 'yyyy-MM-dd')).length}
               </div>
-              <div className="text-sm text-muted-foreground">Today's Activities</div>
+              <div className="text-sm text-green-600">Today's Activities</div>
             </div>
           </CardContent>
         </Card>
@@ -96,9 +115,21 @@ const ReportTab = () => {
       {selectedDate && (
         <Card className="shadow-sm">
           <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center justify-between">
               <CalendarDays className="h-5 w-5 mr-2 text-primary" />
               {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+              {selectedActivities.length > 0 && (
+                <div className="flex items-center space-x-2 text-sm">
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    {stats.approved} Approved
+                  </Badge>
+                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    {stats.pending} Pending
+                  </Badge>
+                </div>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
@@ -108,7 +139,7 @@ const ReportTab = () => {
                   .sort((a, b) => a.period - b.period)
                   .map(activity => (
                     <div key={activity.id} className="group hover:scale-[1.02] transition-all duration-200">
-                      <div className="flex items-start space-x-3 p-4 bg-gradient-to-r from-card to-muted/20 rounded-xl border border-border/50 group-hover:shadow-md">
+                      <div className="flex items-start space-x-3 p-4 bg-gradient-to-r from-card to-muted/20 rounded-xl border border-border/50 group-hover:shadow-md relative">
                         <div className="bg-primary/10 rounded-full p-2 mt-1">
                           <Clock className="h-4 w-4 text-primary" />
                         </div>
@@ -121,13 +152,43 @@ const ReportTab = () => {
                               <Users className="h-3 w-3 mr-1" />
                               {activity.class}
                             </Badge>
+                            {/* Approval Status Badge */}
+                            {activity.isApproved ? (
+                              <Badge className="text-xs bg-green-100 text-green-800 hover:bg-green-200">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Approved
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                Pending
+                              </Badge>
+                            )}
                           </div>
                           <h4 className="font-semibold text-foreground flex items-center mb-1">
                             <BookOpen className="h-4 w-4 mr-2 text-primary" />
                             {activity.subject}
                           </h4>
                           <p className="text-sm text-muted-foreground leading-relaxed">{activity.description}</p>
+                          {activity.isApproved && activity.approvedBy && (
+                            <p className="text-xs text-green-600 mt-2">
+                              Approved by {activity.approvedBy} on {format(new Date(activity.approvedAt!), 'MMM d, yyyy')}
+                            </p>
+                          )}
                         </div>
+                        {/* Approval Action */}
+                        {!activity.isApproved && (
+                          <div className="absolute top-4 right-4">
+                            <Button
+                              size="sm"
+                              onClick={() => handleApprove(activity.id)}
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

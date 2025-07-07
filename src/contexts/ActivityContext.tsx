@@ -8,12 +8,16 @@ export interface Activity {
   class: string;
   subject: string;
   description: string;
+  isApproved?: boolean;
+  approvedBy?: string;
+  approvedAt?: string;
 }
 
 interface ActivityContextType {
   activities: Activity[];
   addActivity: (activity: Omit<Activity, 'id'>) => void;
   updateActivity: (id: string, activity: Omit<Activity, 'id'>) => void;
+  approveActivity: (id: string, approvedBy: string) => void;
   getActivitiesByDate: (date: string) => Activity[];
   getActiveDate: () => string[];
 }
@@ -47,7 +51,8 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const addActivity = (activity: Omit<Activity, 'id'>) => {
     const newActivity: Activity = {
       ...activity,
-      id: Date.now().toString()
+      id: Date.now().toString(),
+      isApproved: false
     };
     setActivities(prev => [...prev, newActivity]);
   };
@@ -56,6 +61,21 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setActivities(prev =>
       prev.map(activity =>
         activity.id === id ? { ...updatedActivity, id } : activity
+      )
+    );
+  };
+
+  const approveActivity = (id: string, approvedBy: string) => {
+    setActivities(prev =>
+      prev.map(activity =>
+        activity.id === id 
+          ? { 
+              ...activity, 
+              isApproved: true, 
+              approvedBy, 
+              approvedAt: new Date().toISOString() 
+            } 
+          : activity
       )
     );
   };
@@ -74,6 +94,7 @@ export const ActivityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       activities,
       addActivity,
       updateActivity,
+      approveActivity,
       getActivitiesByDate,
       getActiveDate
     }}>
