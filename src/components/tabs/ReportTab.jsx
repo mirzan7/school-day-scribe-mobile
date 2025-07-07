@@ -4,41 +4,30 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, BookOpen, Users, TrendingUp, CalendarDays, CheckCircle, XCircle, AlertCircle, Send, Eye } from 'lucide-react';
-import { format, isSameDay } from 'date-fns';
+import { Clock, BookOpen, Users, TrendingUp, CalendarDays, CheckCircle2, Send, AlertCircle, BarChart3 } from 'lucide-react';
+import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 
 const ReportTab = () => {
-  const { getActivitiesByDate, getActiveDate, approveActivity, approveDayActivities, getDayApprovalStatus } = useActivity();
+  const { getActivitiesByDate, getActiveDate, approveActivity } = useActivity();
   const [selectedDate, setSelectedDate] = useState(new Date());
   
   const activeDates = getActiveDate().map(dateStr => new Date(dateStr));
   const selectedActivities = selectedDate ? getActivitiesByDate(format(selectedDate, 'yyyy-MM-dd')) : [];
-  const dayApprovalStatus = selectedDate ? getDayApprovalStatus(format(selectedDate, 'yyyy-MM-dd')) : null;
 
   const handleApprove = (activityId) => {
-    approveActivity(activityId, 'Principal John Smith');
+    approveActivity(activityId, 'Principal');
     toast({
       title: "Activity Approved",
-      description: "The activity has been approved by the principal.",
-    });
-  };
-
-  const handleApproveDayActivities = () => {
-    const dateString = format(selectedDate, 'yyyy-MM-dd');
-    approveDayActivities(dateString, 'Principal John Smith');
-    toast({
-      title: "Day Activities Approved",
-      description: `All activities for ${format(selectedDate, 'MMMM d, yyyy')} have been approved.`,
+      description: "The activity has been approved successfully.",
     });
   };
 
   const getApprovalStats = () => {
     const total = selectedActivities.length;
     const approved = selectedActivities.filter(a => a.isApproved).length;
-    const sentForApproval = selectedActivities.filter(a => a.sentForApproval && !a.isApproved).length;
-    const pending = total - approved - sentForApproval;
-    return { total, approved, pending, sentForApproval };
+    const pending = selectedActivities.filter(a => a.sentForApproval && !a.isApproved).length;
+    return { total, approved, pending };
   };
 
   const stats = getApprovalStats();
@@ -49,110 +38,70 @@ const ReportTab = () => {
 
   const modifiersStyles = {
     active: {
-      backgroundColor: '#10b981',
+      backgroundColor: '#028a0f',
       color: 'white',
-      borderRadius: '50%',
+      borderRadius: '8px',
     },
   };
 
   return (
-    <div className="p-4 space-y-6 pb-20">
-      <div className="text-center mb-6">
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 mb-4">
-          <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
-            <TrendingUp className="h-8 w-8 text-blue-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Activity Report</h2>
-          <p className="text-gray-600">Track your daily teaching activities and progress</p>
+    <div className="p-6 space-y-6 pb-24 max-w-2xl mx-auto">
+      {/* Header */}
+      <div className="text-center space-y-4 animate-fade-in">
+        <div className="w-16 h-16 theme-primary rounded-2xl flex items-center justify-center mx-auto minimal-shadow-lg">
+          <BarChart3 className="h-8 w-8 text-white" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Activity Reports</h2>
+          <p className="text-gray-600">Track and manage your teaching activities</p>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-700">{activeDates.length}</div>
-              <div className="text-sm text-blue-600">Active Days</div>
-            </div>
+      {/* Overview Stats */}
+      <div className="grid grid-cols-2 gap-4 animate-slide-up">
+        <Card className="theme-bg-light border-0 minimal-shadow">
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold theme-text">{activeDates.length}</div>
+            <div className="text-sm text-gray-600">Active Days</div>
           </CardContent>
         </Card>
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-700">
-                {getActivitiesByDate(format(new Date(), 'yyyy-MM-dd')).length}
-              </div>
-              <div className="text-sm text-green-600">Today's Activities</div>
+        <Card className="bg-blue-50 border-0 minimal-shadow">
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-blue-700">
+              {getActivitiesByDate(format(new Date(), 'yyyy-MM-dd')).length}
             </div>
+            <div className="text-sm text-gray-600">Today's Activities</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Approval Stats */}
-      {selectedActivities.length > 0 && (
-        <div className="grid grid-cols-4 gap-2 mb-6">
-          <Card className="bg-gray-50 border-gray-200">
-            <CardContent className="p-3">
-              <div className="text-center">
-                <div className="text-lg font-bold text-gray-700">{stats.total}</div>
-                <div className="text-xs text-gray-600">Total</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-green-50 border-green-200">
-            <CardContent className="p-3">
-              <div className="text-center">
-                <div className="text-lg font-bold text-green-700">{stats.approved}</div>
-                <div className="text-xs text-green-600">Approved</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-yellow-50 border-yellow-200">
-            <CardContent className="p-3">
-              <div className="text-center">
-                <div className="text-lg font-bold text-yellow-700">{stats.sentForApproval}</div>
-                <div className="text-xs text-yellow-600">Sent</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-orange-50 border-orange-200">
-            <CardContent className="p-3">
-              <div className="text-center">
-                <div className="text-lg font-bold text-orange-700">{stats.pending}</div>
-                <div className="text-xs text-orange-600">Pending</div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      <Card className="shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center">
-            <CalendarDays className="h-5 w-5 mr-2 text-blue-600" />
-            Select Date
+      {/* Calendar */}
+      <Card className="border-0 minimal-shadow-lg animate-slide-up">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center space-x-2 text-lg">
+            <CalendarDays className="h-5 w-5 theme-text" />
+            <span>Select Date</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="flex justify-center">
+          <div className="flex justify-center pb-4">
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
               modifiers={modifiers}
               modifiersStyles={modifiersStyles}
-              className="rounded-md border-0 pointer-events-auto"
+              className="rounded-xl"
             />
           </div>
-          <div className="px-4 pb-4">
+          <div className="px-6 pb-4">
             <div className="flex items-center justify-center space-x-6 text-sm">
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 theme-primary rounded"></div>
                 <span className="text-gray-600">Active Days</span>
               </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-gray-300 rounded-full mr-2"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-gray-200 rounded"></div>
                 <span className="text-gray-600">No Activities</span>
               </div>
             </div>
@@ -160,169 +109,105 @@ const ReportTab = () => {
         </CardContent>
       </Card>
 
+      {/* Selected Date Activities */}
       {selectedDate && (
-        <Card className="shadow-sm">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-transparent">
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center">
-                <CalendarDays className="h-5 w-5 mr-2 text-blue-600" />
-                {format(selectedDate, 'EEEE, MMMM d, yyyy')}
-              </div>
+        <Card className="border-0 minimal-shadow-lg animate-slide-up">
+          <CardHeader className="theme-bg-light rounded-t-xl">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center space-x-2">
+                <CalendarDays className="h-5 w-5 theme-text" />
+                <span className="theme-text">{format(selectedDate, 'EEEE, MMM d')}</span>
+              </CardTitle>
               {selectedActivities.length > 0 && (
-                <div className="flex items-center space-x-2 text-sm flex-wrap">
-                  <Badge className="bg-green-100 text-green-800 border-green-200">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    {stats.approved} Approved
+                <div className="flex items-center space-x-2">
+                  <Badge className="theme-primary-light theme-text border-0">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    {stats.approved}
                   </Badge>
-                  <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                  <Badge className="bg-amber-100 text-amber-800 border-0">
                     <Send className="h-3 w-3 mr-1" />
-                    {stats.sentForApproval} Sent
+                    {stats.pending}
                   </Badge>
-                  <Badge className="bg-orange-100 text-orange-800 border-orange-200">
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    {stats.pending} Pending
-                  </Badge>
-                  {dayApprovalStatus && (
-                    <Badge className="bg-purple-100 text-purple-800 border-purple-200">
-                      <Eye className="h-3 w-3 mr-1" />
-                      Day {dayApprovalStatus.isApproved ? 'Approved' : 'Sent'}
-                    </Badge>
-                  )}
                 </div>
               )}
-            </CardTitle>
+            </div>
           </CardHeader>
           
-          {/* Day Approval Section */}
-          {selectedActivities.length > 0 && dayApprovalStatus && !dayApprovalStatus.isApproved && (
-            <div className="px-4 pb-4 border-b">
-              <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="bg-purple-100 rounded-full p-2">
-                        <Eye className="h-5 w-5 text-purple-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-purple-900">Day Approval Required</h3>
-                        <p className="text-sm text-purple-700">
-                          This day's activities were sent for approval on {format(new Date(dayApprovalStatus.sentAt), 'MMM d, yyyy')}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      onClick={handleApproveDayActivities}
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Approve Day
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-          
-          {dayApprovalStatus && dayApprovalStatus.isApproved && (
-            <div className="px-4 pb-4 border-b">
-              <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-green-100 rounded-full p-2">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-green-900">Day Approved</h3>
-                      <p className="text-sm text-green-700">
-                        All activities for this day were approved by {dayApprovalStatus.approvedBy} on {format(new Date(dayApprovalStatus.approvedAt), 'MMM d, yyyy')}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             {selectedActivities.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {selectedActivities
                   .sort((a, b) => a.period - b.period)
                   .map(activity => (
-                    <div key={activity.id} className="group hover:scale-[1.02] transition-all duration-200">
-                      <div className="flex items-start space-x-3 p-4 bg-gradient-to-r from-white to-gray-50 rounded-xl border border-gray-200 group-hover:shadow-md relative">
-                        <div className="bg-blue-100 rounded-full p-2 mt-1">
-                          <Clock className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <Badge variant="outline" className="text-xs font-medium border-gray-300">
-                              Period {activity.period}
-                            </Badge>
-                            <Badge className="text-xs bg-blue-100 text-blue-800 hover:bg-blue-200">
-                              <Users className="h-3 w-3 mr-1" />
-                              {activity.class}
-                            </Badge>
-                            {/* Approval Status Badge */}
-                            {activity.isApproved ? (
-                              <Badge className="text-xs bg-green-100 text-green-800 hover:bg-green-200">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Approved
-                              </Badge>
-                            ) : activity.sentForApproval ? (
-                              <Badge className="text-xs bg-yellow-100 text-yellow-800 border-yellow-200">
-                                <Send className="h-3 w-3 mr-1" />
-                                Sent for Approval
-                              </Badge>
-                            ) : (
-                              <Badge className="text-xs bg-orange-100 text-orange-800 border-orange-200">
-                                <AlertCircle className="h-3 w-3 mr-1" />
-                                Pending
-                              </Badge>
-                            )}
+                    <div key={activity.id} className="group">
+                      <div className={`p-4 rounded-xl border-0 minimal-shadow transition-all duration-200 ${
+                        activity.isApproved 
+                          ? 'theme-primary-light' 
+                          : activity.sentForApproval 
+                            ? 'bg-amber-50' 
+                            : 'bg-gray-50'
+                      }`}>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3 flex-1">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                              activity.isApproved 
+                                ? 'bg-white/80' 
+                                : 'bg-white/60'
+                            }`}>
+                              {activity.isApproved ? (
+                                <CheckCircle2 className="h-5 w-5 theme-text" />
+                              ) : activity.sentForApproval ? (
+                                <Send className="h-5 w-5 text-amber-600" />
+                              ) : (
+                                <Clock className="h-5 w-5 text-gray-600" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <Badge variant="outline" className="text-xs border-gray-300">
+                                  Period {activity.period}
+                                </Badge>
+                                <Badge className="text-xs bg-blue-100 text-blue-800 border-0">
+                                  <Users className="h-3 w-3 mr-1" />
+                                  {activity.class}
+                                </Badge>
+                              </div>
+                              <h4 className="font-semibold text-gray-900 flex items-center mb-1">
+                                <BookOpen className="h-4 w-4 mr-2 text-blue-600" />
+                                {activity.subject}
+                              </h4>
+                              <p className="text-sm text-gray-600 leading-relaxed">{activity.description}</p>
+                              {activity.isApproved && (
+                                <p className="text-xs theme-text mt-2 font-medium">
+                                  ✓ Approved by {activity.approvedBy}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          <h4 className="font-semibold text-gray-900 flex items-center mb-1">
-                            <BookOpen className="h-4 w-4 mr-2 text-blue-600" />
-                            {activity.subject}
-                          </h4>
-                          <p className="text-sm text-gray-600 leading-relaxed">{activity.description}</p>
-                          {activity.isApproved && activity.approvedBy && (
-                            <p className="text-xs text-green-600 mt-2">
-                              Approved by {activity.approvedBy} on {format(new Date(activity.approvedAt), 'MMM d, yyyy')}
-                            </p>
-                          )}
-                          {activity.sentForApproval && !activity.isApproved && activity.sentAt && (
-                            <p className="text-xs text-yellow-600 mt-2">
-                              Sent for approval on {format(new Date(activity.sentAt), 'MMM d, yyyy')}
-                            </p>
-                          )}
-                        </div>
-                        {/* Approval Action */}
-                        {activity.sentForApproval && !activity.isApproved && (
-                          <div className="absolute top-4 right-4">
+                          {activity.sentForApproval && !activity.isApproved && (
                             <Button
                               size="sm"
                               onClick={() => handleApprove(activity.id)}
-                              className="bg-green-600 hover:bg-green-700 text-white"
+                              className="theme-primary rounded-lg ml-3"
                             >
-                              <CheckCircle className="h-4 w-4 mr-1" />
+                              <CheckCircle2 className="h-4 w-4 mr-1" />
                               Approve
                             </Button>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
               </div>
             ) : (
               <div className="text-center py-12">
-                <div className="bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-                  <CalendarDays className="h-10 w-10 text-gray-400" />
+                <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <CalendarDays className="h-8 w-8 text-gray-400" />
                 </div>
-                <h3 className="font-medium text-gray-900 mb-2">No activities recorded</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">No activities recorded</h3>
                 <p className="text-sm text-gray-600 mb-4">Add activities from the Home tab to see them here</p>
-                <div className="text-xs text-gray-600 bg-gray-100 rounded-lg p-3 max-w-xs mx-auto">
-                  Selected: {format(selectedDate, 'MMM d, yyyy')}
+                <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3 max-w-xs mx-auto">
+                  {format(selectedDate, 'MMMM d, yyyy')}
                 </div>
               </div>
             )}

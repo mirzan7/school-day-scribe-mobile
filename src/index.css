@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -35,9 +34,9 @@ All colors MUST be HSL.
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 145 100% 17%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -47,6 +46,14 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Custom theme colors */
+    --theme-primary: 145 100% 17%;
+    --theme-primary-light: 145 60% 95%;
+    --theme-primary-dark: 145 100% 12%;
+    --theme-success: 145 100% 17%;
+    --theme-warning: 45 100% 60%;
+    --theme-error: 0 84% 60%;
   }
 
   .dark {
@@ -94,13 +101,55 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    @apply bg-gray-50 text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.025em;
   }
 }
 
-/* PWA and Mobile Optimizations */
+/* Custom theme utilities */
 @layer utilities {
+  .theme-primary {
+    background-color: hsl(var(--theme-primary));
+    color: white;
+  }
+  
+  .theme-primary-light {
+    background-color: hsl(var(--theme-primary-light));
+    color: hsl(var(--theme-primary));
+  }
+  
+  .theme-border {
+    border-color: hsl(var(--theme-primary));
+  }
+  
+  .theme-text {
+    color: hsl(var(--theme-primary));
+  }
+  
+  .theme-bg-light {
+    background-color: hsl(145 60% 97%);
+  }
+
+  .glass-effect {
+    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .minimal-shadow {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  }
+
+  .minimal-shadow-lg {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  }
+
   .safe-area-pb {
     padding-bottom: env(safe-area-inset-bottom);
   }
@@ -115,6 +164,48 @@ All colors MUST be HSL.
   
   .safe-area-pr {
     padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Smooth animations */
+@layer components {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from { 
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -145,7 +236,25 @@ button, input, select, textarea {
   input:focus,
   select:focus,
   textarea:focus {
-    outline: 2px solid hsl(var(--ring));
+    outline: 2px solid hsl(var(--theme-primary));
     outline-offset: 2px;
   }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--theme-primary) / 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--theme-primary) / 0.5);
 }
