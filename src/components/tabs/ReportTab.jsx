@@ -74,114 +74,6 @@ const ReportTab = () => {
           </div>
         </div>
 
-        {/* Pending Approvals */}
-        {pendingActivities.length > 0 && (
-          <Card className="bg-amber-50 border-amber-200 border-0 minimal-shadow-lg animate-slide-up">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center space-x-2 text-amber-800">
-                <AlertCircle className="h-5 w-5" />
-                <span>Pending Approvals ({pendingActivities.length})</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {pendingActivities.slice(0, 3).map(activity => (
-                <div key={activity.id} className="bg-white rounded-xl p-4 minimal-shadow">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <Badge variant="outline" className="text-xs">
-                          Period {activity.period}
-                        </Badge>
-                        <Badge className="text-xs bg-blue-100 text-blue-800 border-0">
-                          {activity.class}
-                        </Badge>
-                      </div>
-                      <p className="font-medium text-gray-900">{activity.subject}</p>
-                      <p className="text-sm text-gray-600 line-clamp-1">{activity.description}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {format(new Date(activity.date), 'MMM d')} • {activity.teacherName}
-                      </p>
-                    </div>
-                    <div className="flex space-x-2 ml-3">
-                      <Button
-                        size="sm"
-                        onClick={() => handleApprove(activity.id)}
-                        className="theme-primary rounded-lg"
-                      >
-                        <CheckCircle2 className="h-4 w-4 mr-1" />
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleReject(activity.id)}
-                        className="rounded-lg"
-                      >
-                        Reject
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {pendingActivities.length > 3 && (
-                <p className="text-sm text-amber-700 text-center">
-                  +{pendingActivities.length - 3} more pending approvals
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Teachers List */}
-        <Card className="border-0 minimal-shadow-lg animate-slide-up">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center space-x-2 text-lg">
-              <User className="h-5 w-5 theme-text" />
-              <span>Select Teacher</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {allTeachers.map(teacher => {
-              const teacherActivities = getActivitiesByTeacher(teacher.id);
-              const pendingCount = pendingActivities.filter(a => a.teacherId === teacher.id).length;
-              
-              return (
-                <div 
-                  key={teacher.id}
-                  onClick={() => setSelectedTeacher(teacher)}
-                  className={`p-4 rounded-xl border-0 minimal-shadow transition-all duration-200 cursor-pointer hover:scale-[1.02] ${
-                    selectedTeacher?.id === teacher.id 
-                      ? 'theme-primary-light theme-border' 
-                      : 'bg-gray-50 hover:bg-gray-100'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-lg bg-white/80 flex items-center justify-center minimal-shadow">
-                        <User className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900">{teacher.name}</h4>
-                        <p className="text-sm text-gray-600">{teacher.department}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge className="bg-blue-100 text-blue-800 border-0">
-                        {teacherActivities.length} activities
-                      </Badge>
-                      {pendingCount > 0 && (
-                        <Badge className="bg-amber-100 text-amber-800 border-0">
-                          {pendingCount} pending
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-
         {/* Calendar */}
         <Card className="border-0 minimal-shadow-lg animate-slide-up">
           <CardHeader className="pb-4">
@@ -343,6 +235,56 @@ const ReportTab = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Teachers List */}
+        <Card className="border-0 minimal-shadow-lg animate-slide-up">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center space-x-2 text-lg">
+              <User className="h-5 w-5 theme-text" />
+              <span>Select Teacher</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {allTeachers.map(teacher => {
+              const teacherActivities = getActivitiesByTeacher(teacher.id);
+              const pendingCount = pendingActivities.filter(a => a.teacherId === teacher.id).length;
+              
+              return (
+                <div 
+                  key={teacher.id}
+                  onClick={() => setSelectedTeacher(teacher)}
+                  className={`p-4 rounded-xl border-0 minimal-shadow transition-all duration-200 cursor-pointer hover:scale-[1.02] ${
+                    selectedTeacher?.id === teacher.id 
+                      ? 'theme-primary-light theme-border' 
+                      : 'bg-gray-50 hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-lg bg-white/80 flex items-center justify-center minimal-shadow">
+                        <User className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{teacher.name}</h4>
+                        <p className="text-sm text-gray-600">{teacher.department}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge className="bg-blue-100 text-blue-800 border-0">
+                        {teacherActivities.length} activities
+                      </Badge>
+                      {pendingCount > 0 && (
+                        <Badge className="bg-amber-100 text-amber-800 border-0">
+                          {pendingCount} pending
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
       </div>
     );
   }

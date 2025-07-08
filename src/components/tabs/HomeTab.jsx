@@ -177,6 +177,67 @@ const HomeTab = () => {
           <p className="text-gray-600">Monitor teacher activities and approvals</p>
         </div>
 
+        {/* Pending Approvals */}
+        {pendingActivities.length > 0 && (
+          <Card className="bg-amber-50 border-amber-200 border-0 minimal-shadow-lg animate-slide-up">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-amber-800 mb-4 flex items-center">
+                <Shield className="h-5 w-5 mr-2" />
+                Pending Approvals ({pendingActivities.length})
+              </h3>
+              <div className="grid gap-3">
+                {pendingActivities.slice(0, 5).map(activity => (
+                  <div key={activity.id} className="p-4 bg-white rounded-xl minimal-shadow">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Badge variant="outline" className="text-xs">
+                            Period {activity.period}
+                          </Badge>
+                          <Badge className="text-xs bg-blue-100 text-blue-800 border-0">
+                            {activity.class}
+                          </Badge>
+                          <Badge className="text-xs bg-green-100 text-green-800 border-0">
+                            {activity.subject}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">{activity.description}</p>
+                        <p className="text-xs text-gray-500">
+                          {format(new Date(activity.date), 'MMM d, yyyy')} • {activity.teacherName}
+                        </p>
+                      </div>
+                      <div className="flex space-x-2 ml-3">
+                        <Button
+                          size="sm"
+                          onClick={() => handleApprove(activity.id)}
+                          className="theme-primary rounded-lg"
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleReject(activity.id)}
+                          className="rounded-lg"
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {pendingActivities.length > 5 && (
+                  <p className="text-sm text-amber-700 text-center">
+                    +{pendingActivities.length - 5} more pending approvals
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Teachers Overview */}
         <Card className="border-0 minimal-shadow-lg animate-slide-up">
           <CardContent className="p-6">
@@ -185,7 +246,29 @@ const HomeTab = () => {
               Teachers Overview
             </h3>
             <div className="grid gap-3">
-              {allTeachers.map(teacher => {
+              {allTeachers
+                .sort((a, b) => {
+                  const aPendingCount = getTeacherPendingCount(a.id);
+                  const bPendingCount = getTeacherPendingCount(b.id);
+                  if (aPendingCount !== bPendingCount) {
+                    return bPendingCount - aPendingCount; // Teachers with more pending first
+                  }
+                  // If same pending count, sort by latest activity
+                  const aLatestActivity = pendingActivities
+                    .filter(activity => activity.teacherId === a.id)
+                    .sort((x, y) => new Date(y.createdAt || y.date).getTime() - new Date(x.createdAt || x.date).getTime())[0];
+                  const bLatestActivity = pendingActivities
+                    .filter(activity => activity.teacherId === b.id)
+                    .sort((x, y) => new Date(y.createdAt || y.date).getTime() - new Date(x.createdAt || x.date).getTime())[0];
+                  
+                  if (!aLatestActivity && !bLatestActivity) return 0;
+                  if (!aLatestActivity) return 1;
+                  if (!bLatestActivity) return -1;
+                  
+                  return new Date(bLatestActivity.createdAt || bLatestActivity.date).getTime() - 
+                         new Date(aLatestActivity.createdAt || aLatestActivity.date).getTime();
+                })
+                .map(teacher => {
                 const pendingCount = getTeacherPendingCount(teacher.id);
                 return (
                   <div 

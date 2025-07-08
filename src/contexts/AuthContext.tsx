@@ -5,6 +5,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  role?: string;
 }
 
 interface AuthContextType {
@@ -37,7 +38,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser({
           id: '1',
           name: 'John Teacher',
-          email: 'john.teacher@school.edu'
+          email: 'john.teacher@school.edu',
+          role: 'teacher'
         });
         setIsLoading(false);
       }, 1500);
@@ -57,9 +59,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const mockUser = {
         id: '1',
         name: 'John Teacher',
-        email: email
+        email: email,
+        role: 'teacher'
       };
-      
+      setUser(mockUser);
+      localStorage.setItem('authToken', 'mock-jwt-token');
+      setIsLoading(false);
+      return true;
+    } else if (email === 'principal@school.edu' && password === 'password123') {
+      const mockUser = {
+        id: '2',
+        name: 'Principal Smith',
+        email: email,
+        role: 'principal'
+      };
       setUser(mockUser);
       localStorage.setItem('authToken', 'mock-jwt-token');
       setIsLoading(false);
