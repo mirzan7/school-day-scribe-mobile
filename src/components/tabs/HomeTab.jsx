@@ -10,12 +10,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Clock, BookOpen, Calendar as CalendarIcon, ChevronLeft, ChevronRight, CheckCircle2, Send, PlusCircle } from 'lucide-react';
+import { Plus, Clock, BookOpen, Calendar as CalendarIcon, ChevronLeft, ChevronRight, CheckCircle2, Send, PlusCircle, User, Shield, X, Check } from 'lucide-react';
 import { format } from 'date-fns';
 
 const HomeTab = () => {
-  const { addActivity, getActivitiesByDate, getAllClasses, getAllSubjects, addCustomClass, addCustomSubject } = useActivity();
+  const { addActivity, getActivitiesByDate, getAllClasses, getAllSubjects, addCustomClass, addCustomSubject, getPendingActivities, approveActivity, rejectActivity, getAllTeachers } = useActivity();
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -23,6 +24,8 @@ const HomeTab = () => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isCustomClass, setIsCustomClass] = useState(false);
   const [isCustomSubject, setIsCustomSubject] = useState(false);
+  const [isPendingDialogOpen, setIsPendingDialogOpen] = useState(false);
+  const [selectedTeacherPending, setSelectedTeacherPending] = useState([]);
   
   const [formData, setFormData] = useState({
     class: '',
@@ -38,6 +41,8 @@ const HomeTab = () => {
 
   const allClasses = getAllClasses();
   const allSubjects = getAllSubjects();
+  const allTeachers = getAllTeachers();
+  const pendingActivities = getPendingActivities();
 
   const handleAddActivity = (period) => {
     setSelectedPeriod(period);
@@ -120,6 +125,7 @@ const HomeTab = () => {
   const getStatusColor = (activity) => {
     if (!activity) return 'bg-gray-50 border-gray-200';
     if (activity.isApproved) return 'theme-primary-light theme-border';
+    if (activity.isRejected) return 'bg-red-50 border-red-200';
     if (activity.sentForApproval) return 'bg-amber-50 border-amber-200';
     return 'bg-blue-50 border-blue-200';
   };
@@ -127,30 +133,190 @@ const HomeTab = () => {
   const getStatusIcon = (activity) => {
     if (!activity) return <Plus className="h-5 w-5 text-gray-400" />;
     if (activity.isApproved) return <CheckCircle2 className="h-5 w-5 theme-text" />;
+    if (activity.isRejected) return <X className="h-5 w-5 text-red-600" />;
     if (activity.sentForApproval) return <Send className="h-5 w-5 text-amber-600" />;
     return <Clock className="h-5 w-5 text-blue-600" />;
+  };
+
+  const getTeacherPendingCount = (teacherId) => {
+    return pendingActivities.filter(activity => activity.teacherId === teacherId).length;
+  };
+
+  const handleTeacherClick = (teacherId) => {
+    const teacherPending = pendingActivities.filter(activity => activity.teacherId === teacherId);
+    setSelectedTeacherPending(teacherPending);
+    setIsPendingDialogOpen(true);
+  };
+
+  const handleApprove = (activityId) => {
+    approveActivity(activityId, user?.name || 'Principal');
+    setSelectedTeacherPending(prev => prev.filter(activity => activity.id !== activityId));
+    toast({
+      title: "Activity Approved",
+      description: "The activity has been approved successfully.",
+    });
+  };
+
+  const handleReject = (activityId, reason = 'Not specified') => {
+    rejectActivity(activityId, user?.name || 'Principal', reason);
+    setSelectedTeacherPending(prev => prev.filter(activity => activity.id !== activityId));
+    toast({
+      title: "Activity Rejected",
+      description: "The activity has been rejected.",
+      variant: "destructive"
+    });
   };
 
   // Show different view for principal
   if (user?.role === 'principal') {
     return (
-      <div className="p-6 space-y-6 pb-24 max-w-2xl mx-auto">
+      <div className="p-6 space-y-6 pb-32 max-w-2xl mx-auto">
+        {/* Header */}
         <div className="text-center space-y-4 animate-fade-in">
           <h2 className="text-2xl font-bold text-gray-900">Principal Dashboard</h2>
-          <p className="text-gray-600">Review and approve teacher activities</p>
+          <p className="text-gray-600">Monitor teacher activities and approvals</p>
         </div>
-        <Card className="theme-bg-light border-0 minimal-shadow">
-          <CardContent className="p-6 text-center">
-            <h3 className="text-lg font-semibold theme-text mb-2">Access Reports Tab</h3>
-            <p className="text-gray-600">Go to the Reports tab to review and approve pending activities from teachers.</p>
+
+        {/* Teachers Overview */}
+        <Card className="border-0 minimal-shadow-lg animate-slide-up">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold theme-text mb-4 flex items-center">
+              <User className="h-5 w-5 mr-2" />
+              Teachers Overview
+            </h3>
+            <div className="grid gap-3">
+              {allTeachers.map(teacher => {
+                const pendingCount = getTeacherPendingCount(teacher.id);
+                return (
+                  <div 
+                    key={teacher.id}
+                    onClick={() => pendingCount > 0 && handleTeacherClick(teacher.id)}
+                    className={`p-4 rounded-xl border-0 minimal-shadow transition-all duration-200 ${
+                      pendingCount > 0 
+                        ? 'bg-amber-50 cursor-pointer hover:scale-[1.02]' 
+                        : 'bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-lg bg-white/80 flex items-center justify-center minimal-shadow">
+                          <User className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{teacher.name}</h4>
+                          <p className="text-sm text-gray-600">{teacher.department}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {pendingCount > 0 && (
+                          <Badge className="bg-amber-100 text-amber-800 border-0">
+                            {pendingCount} pending
+                          </Badge>
+                        )}
+                        <Badge variant="outline" className="text-xs">
+                          ID: {teacher.teacherId}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
+
+        {/* Overall Stats */}
+        <div className="grid grid-cols-3 gap-4 animate-slide-up">
+          <Card className="theme-bg-light border-0 minimal-shadow">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold theme-text">{allTeachers.length}</div>
+              <div className="text-sm text-gray-600">Total Teachers</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-amber-50 border-0 minimal-shadow">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-amber-700">{pendingActivities.length}</div>
+              <div className="text-sm text-gray-600">Pending</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-blue-50 border-0 minimal-shadow">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-blue-700">
+                {getActivitiesByDate(format(new Date(), 'yyyy-MM-dd')).length}
+              </div>
+              <div className="text-sm text-gray-600">Today</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Pending Approvals Dialog */}
+        <Dialog open={isPendingDialogOpen} onOpenChange={setIsPendingDialogOpen}>
+          <DialogContent className="w-full max-w-2xl mx-auto rounded-2xl border-0 minimal-shadow-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader className="text-center pb-4">
+              <DialogTitle className="flex items-center justify-center space-x-2 text-xl">
+                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <Shield className="h-4 w-4 text-amber-600" />
+                </div>
+                <span>Pending Approvals</span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {selectedTeacherPending.map(activity => (
+                <div key={activity.id} className="p-4 bg-gray-50 rounded-xl">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Badge variant="outline" className="text-xs">
+                          Period {activity.period}
+                        </Badge>
+                        <Badge className="text-xs bg-blue-100 text-blue-800 border-0">
+                          {activity.class}
+                        </Badge>
+                        <Badge className="text-xs bg-green-100 text-green-800 border-0">
+                          {activity.subject}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">{activity.description}</p>
+                      <p className="text-xs text-gray-500">
+                        {format(new Date(activity.date), 'MMM d, yyyy')} • {activity.teacherName}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleApprove(activity.id)}
+                      className="theme-primary rounded-lg flex-1"
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleReject(activity.id)}
+                      className="rounded-lg flex-1"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {selectedTeacherPending.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  No pending activities for this teacher
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6 pb-24 max-w-2xl mx-auto">
+    <div className="p-6 space-y-6 pb-32 max-w-2xl mx-auto">
       {/* Header */}
       <div className="text-center space-y-4 animate-fade-in">
         <h2 className="text-2xl font-bold text-gray-900">Today's Schedule</h2>
@@ -260,7 +426,10 @@ const HomeTab = () => {
                           {activity.isApproved && (
                             <p className="text-xs theme-text font-medium">✓ Approved by {activity.approvedBy}</p>
                           )}
-                          {activity.sentForApproval && !activity.isApproved && (
+                          {activity.isRejected && (
+                            <p className="text-xs text-red-600 font-medium">✗ Rejected by {activity.rejectedBy}</p>
+                          )}
+                          {activity.sentForApproval && !activity.isApproved && !activity.isRejected && (
                             <p className="text-xs text-amber-600 font-medium">⏳ Pending approval</p>
                           )}
                         </div>
