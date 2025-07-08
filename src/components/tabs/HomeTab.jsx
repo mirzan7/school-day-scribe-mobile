@@ -170,25 +170,31 @@ const HomeTab = () => {
   // Show different view for principal
   if (user?.role === 'principal') {
     return (
-      <div className="p-6 space-y-6 pb-32 max-w-2xl mx-auto">
+      <div className="p-6 space-y-8 pb-32 max-w-2xl mx-auto">
         {/* Header */}
-        <div className="text-center space-y-4 animate-fade-in">
-          <h2 className="text-2xl font-bold text-gray-900">Principal Dashboard</h2>
-          <p className="text-gray-600">Monitor teacher activities and approvals</p>
+        <div className="text-center space-y-4 apple-fade-in">
+          <div className="w-16 h-16 apple-card-elevated flex items-center justify-center mx-auto">
+            <Shield className="h-8 w-8 theme-text" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">Principal Dashboard</h2>
+            <p className="text-gray-600 text-lg">Monitor teacher activities and approvals</p>
+          </div>
         </div>
 
         {/* Pending Approvals */}
         {pendingActivities.length > 0 && (
-          <Card className="bg-amber-50 border-amber-200 border-0 minimal-shadow-lg animate-slide-up">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-amber-800 mb-4 flex items-center">
-                <Shield className="h-5 w-5 mr-2" />
-                Pending Approvals ({pendingActivities.length})
-              </h3>
-              <div className="grid gap-3">
-                {pendingActivities.slice(0, 5).map(activity => (
-                  <div key={activity.id} className="p-4 bg-white rounded-xl minimal-shadow">
-                    <div className="flex items-center justify-between">
+          <div className="apple-card-elevated p-6 apple-slide-up">
+            <h3 className="text-xl font-semibold text-amber-800 mb-6 flex items-center">
+              <div className="w-10 h-10 bg-amber-100 rounded-2xl flex items-center justify-center mr-3">
+                <Shield className="h-5 w-5 text-amber-600" />
+              </div>
+              Pending Approvals ({pendingActivities.length})
+            </h3>
+            <div className="space-y-4">
+              {pendingActivities.slice(0, 5).map(activity => (
+                <div key={activity.id} className="apple-card p-5">
+                  <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
                           <Badge variant="outline" className="text-xs">
@@ -206,11 +212,11 @@ const HomeTab = () => {
                           {format(new Date(activity.date), 'MMM d, yyyy')} • {activity.teacherName}
                         </p>
                       </div>
-                      <div className="flex space-x-2 ml-3">
+                      <div className="flex space-x-3 ml-4">
                         <Button
                           size="sm"
                           onClick={() => handleApprove(activity.id)}
-                          className="theme-primary rounded-lg"
+                          className="apple-button theme-primary text-white border-0 hover:scale-105"
                         >
                           <Check className="h-4 w-4 mr-1" />
                           Approve
@@ -219,7 +225,7 @@ const HomeTab = () => {
                           size="sm"
                           variant="destructive"
                           onClick={() => handleReject(activity.id)}
-                          className="rounded-lg"
+                          className="apple-button bg-red-500 text-white border-0 hover:bg-red-600 hover:scale-105"
                         >
                           <X className="h-4 w-4 mr-1" />
                           Reject
@@ -228,23 +234,26 @@ const HomeTab = () => {
                     </div>
                   </div>
                 ))}
-                {pendingActivities.length > 5 && (
-                  <p className="text-sm text-amber-700 text-center">
+              </div>
+              {pendingActivities.length > 5 && (
+                <div className="text-center pt-4">
+                  <p className="text-sm text-amber-700 bg-amber-50 rounded-xl px-4 py-2 inline-block">
                     +{pendingActivities.length - 5} more pending approvals
                   </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Teachers Overview */}
-        <Card className="border-0 minimal-shadow-lg animate-slide-up">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold theme-text mb-4 flex items-center">
-              <User className="h-5 w-5 mr-2" />
-              Teachers Overview
-            </h3>
+        <div className="apple-card-elevated p-6 apple-slide-up">
+          <h3 className="text-xl font-semibold theme-text mb-6 flex items-center">
+            <div className="w-10 h-10 theme-bg-light rounded-2xl flex items-center justify-center mr-3">
+              <User className="h-5 w-5 theme-text" />
+            </div>
+            Teachers Overview
+          </h3>
             <div className="grid gap-3">
               {allTeachers
                 .sort((a, b) => {
