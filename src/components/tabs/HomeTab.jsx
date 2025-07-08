@@ -247,7 +247,8 @@ const HomeTab = () => {
         </div>
 
         {/* Teachers Overview */}
-        <div className="apple-card-elevated p-6 apple-slide-up">
+        <Card className="apple-card-elevated border-0 minimal-shadow-lg animate-slide-up">
+          <CardContent className="p-6">
           <h3 className="text-xl font-semibold theme-text mb-6 flex items-center">
             <div className="w-10 h-10 theme-bg-light rounded-2xl flex items-center justify-center mr-3">
               <User className="h-5 w-5 theme-text" />
