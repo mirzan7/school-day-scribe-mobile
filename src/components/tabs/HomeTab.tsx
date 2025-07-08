@@ -58,7 +58,7 @@ const HomeTab: React.FC = () => {
   const [isCustomSubject, setIsCustomSubject] = useState<boolean>(false);
   const [isPendingDialogOpen, setIsPendingDialogOpen] = useState<boolean>(false);
   const [selectedTeacherPending, setSelectedTeacherPending] = useState<Activity[]>([]);
-  
+
   const [formData, setFormData] = useState<FormData>({
     class: '',
     subject: '',
@@ -79,7 +79,7 @@ const HomeTab: React.FC = () => {
   const handleAddActivity = (period: number): void => {
     setSelectedPeriod(period);
     setIsDialogOpen(true);
-    
+
     const existingActivity = todayActivities.find(a => a.period === period);
     if (existingActivity) {
       setFormData({
@@ -100,10 +100,10 @@ const HomeTab: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
-    
+
     const finalClass = isCustomClass ? formData.customClass.trim() : formData.class;
     const finalSubject = isCustomSubject ? formData.customSubject.trim() : formData.subject;
-    
+
     if (!selectedPeriod || !finalClass || !finalSubject || !formData.description.trim()) {
       toast({
         title: "Missing Information",
@@ -265,18 +265,17 @@ const HomeTab: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-              {pendingActivities.length > 5 && (
-                <div className="text-center pt-4">
-                  <p className="text-sm text-amber-700 bg-amber-50 rounded-xl px-4 py-2 inline-block">
-                    +{pendingActivities.length - 5} more pending approvals
-                  </p>
-                </div>
-              )}
+              ))}
             </div>
-          )}
-        </div>
+            {pendingActivities.length > 5 && (
+              <div className="text-center pt-4">
+                <p className="text-sm text-amber-700 bg-amber-50 rounded-xl px-4 py-2 inline-block">
+                  +{pendingActivities.length - 5} more pending approvals
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Teachers Overview */}
         <Card className="apple-card-elevated border-0 minimal-shadow-lg animate-slide-up">
@@ -302,23 +301,23 @@ const HomeTab: React.FC = () => {
                   const bLatestActivity = pendingActivities
                     .filter(activity => activity.teacherId === b.id)
                     .sort((x, y) => new Date(y.createdAt || y.date).getTime() - new Date(x.createdAt || x.date).getTime())[0];
-                  
+
                   if (!aLatestActivity && !bLatestActivity) return 0;
                   if (!aLatestActivity) return 1;
                   if (!bLatestActivity) return -1;
-                  
-                  return new Date(bLatestActivity.createdAt || bLatestActivity.date).getTime() - 
-                         new Date(aLatestActivity.createdAt || aLatestActivity.date).getTime();
+
+                  return new Date(bLatestActivity.createdAt || bLatestActivity.date).getTime() -
+                          new Date(aLatestActivity.createdAt || aLatestActivity.date).getTime();
                 })
                 .map(teacher => {
                 const pendingCount = getTeacherPendingCount(teacher.id);
                 return (
-                  <div 
+                  <div
                     key={teacher.id}
                     onClick={() => pendingCount > 0 && handleTeacherClick(teacher.id)}
                     className={`p-4 rounded-xl border-0 minimal-shadow transition-all duration-200 ${
-                      pendingCount > 0 
-                        ? 'bg-amber-50 cursor-pointer hover:scale-[1.02]' 
+                      pendingCount > 0
+                        ? 'bg-amber-50 cursor-pointer hover:scale-[1.02]'
                         : 'bg-gray-50'
                     }`}
                   >
@@ -445,7 +444,7 @@ const HomeTab: React.FC = () => {
       {/* Header */}
       <div className="text-center space-y-4 animate-fade-in">
         <h2 className="text-2xl font-bold text-gray-900">Today's Schedule</h2>
-        
+
         {/* Date Navigation */}
         <div className="flex items-center justify-center space-x-3">
           <Button
@@ -456,7 +455,7 @@ const HomeTab: React.FC = () => {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          
+
           <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -482,7 +481,7 @@ const HomeTab: React.FC = () => {
               />
             </PopoverContent>
           </Popover>
-          
+
           <Button
             variant="ghost"
             size="icon"
@@ -492,7 +491,7 @@ const HomeTab: React.FC = () => {
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        
+
         <Button
           variant="ghost"
           size="sm"
@@ -512,7 +511,7 @@ const HomeTab: React.FC = () => {
               <span className="text-sm theme-text">{todayActivities.length}/8 periods</span>
             </div>
             <div className="w-full bg-white rounded-full h-2">
-              <div 
+              <div
                 className="theme-primary h-2 rounded-full transition-all duration-300"
                 style={{ width: `${(todayActivities.length / 8) * 100}%` }}
               ></div>
@@ -526,8 +525,8 @@ const HomeTab: React.FC = () => {
         {periods.map(period => {
           const activity = getPeriodActivity(period);
           return (
-            <Card 
-              key={period} 
+            <Card
+              key={period}
               className={`transition-all duration-200 hover:scale-[1.02] cursor-pointer border-0 minimal-shadow-lg ${getStatusColor(activity)}`}
               onClick={() => handleAddActivity(period)}
             >
@@ -621,7 +620,7 @@ const HomeTab: React.FC = () => {
                 </Select>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium text-gray-700">Subject</Label>
@@ -656,7 +655,7 @@ const HomeTab: React.FC = () => {
                 </Select>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Activity Description</Label>
               <Textarea
@@ -667,18 +666,18 @@ const HomeTab: React.FC = () => {
                 className="rounded-xl border-gray-200 resize-none"
               />
             </div>
-            
+
             <div className="flex space-x-3 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setIsDialogOpen(false)} 
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsDialogOpen(false)}
                 className="flex-1 rounded-xl border-gray-200 h-12"
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="flex-1 theme-primary rounded-xl h-12 font-medium"
               >
                 Send for Approval
