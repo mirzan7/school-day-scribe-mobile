@@ -15,19 +15,51 @@ import { toast } from '@/hooks/use-toast';
 import { Plus, Clock, BookOpen, Calendar as CalendarIcon, ChevronLeft, ChevronRight, CheckCircle2, Send, PlusCircle, User, Shield, X, Check } from 'lucide-react';
 import { format } from 'date-fns';
 
-const HomeTab = () => {
+interface FormData {
+  class: string;
+  subject: string;
+  description: string;
+  customClass: string;
+  customSubject: string;
+}
+
+interface Activity {
+  id: string;
+  date: string;
+  period: number;
+  class: string;
+  subject: string;
+  description: string;
+  teacherId?: string;
+  teacherName?: string;
+  isApproved?: boolean;
+  isRejected?: boolean;
+  sentForApproval?: boolean;
+  approvedBy?: string;
+  rejectedBy?: string;
+  createdAt?: string;
+}
+
+interface Teacher {
+  id: string;
+  name: string;
+  department: string;
+  teacherId: string;
+}
+
+const HomeTab: React.FC = () => {
   const { addActivity, getActivitiesByDate, getAllClasses, getAllSubjects, addCustomClass, addCustomSubject, getPendingActivities, approveActivity, rejectActivity, getAllTeachers } = useActivity();
   const { user } = useAuth();
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState(null);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [isCustomClass, setIsCustomClass] = useState(false);
-  const [isCustomSubject, setIsCustomSubject] = useState(false);
-  const [isPendingDialogOpen, setIsPendingDialogOpen] = useState(false);
-  const [selectedTeacherPending, setSelectedTeacherPending] = useState([]);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
+  const [isCustomClass, setIsCustomClass] = useState<boolean>(false);
+  const [isCustomSubject, setIsCustomSubject] = useState<boolean>(false);
+  const [isPendingDialogOpen, setIsPendingDialogOpen] = useState<boolean>(false);
+  const [selectedTeacherPending, setSelectedTeacherPending] = useState<Activity[]>([]);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     class: '',
     subject: '',
     description: '',
@@ -35,16 +67,16 @@ const HomeTab = () => {
     customSubject: ''
   });
 
-  const periods = Array.from({ length: 8 }, (_, i) => i + 1);
-  const dateString = format(selectedDate, 'yyyy-MM-dd');
-  const todayActivities = getActivitiesByDate(dateString);
+  const periods: number[] = Array.from({ length: 8 }, (_, i) => i + 1);
+  const dateString: string = format(selectedDate, 'yyyy-MM-dd');
+  const todayActivities: Activity[] = getActivitiesByDate(dateString);
 
-  const allClasses = getAllClasses();
-  const allSubjects = getAllSubjects();
-  const allTeachers = getAllTeachers();
-  const pendingActivities = getPendingActivities();
+  const allClasses: string[] = getAllClasses();
+  const allSubjects: string[] = getAllSubjects();
+  const allTeachers: Teacher[] = getAllTeachers();
+  const pendingActivities: Activity[] = getPendingActivities();
 
-  const handleAddActivity = (period) => {
+  const handleAddActivity = (period: number): void => {
     setSelectedPeriod(period);
     setIsDialogOpen(true);
     
@@ -66,11 +98,11 @@ const HomeTab = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     
-    let finalClass = isCustomClass ? formData.customClass.trim() : formData.class;
-    let finalSubject = isCustomSubject ? formData.customSubject.trim() : formData.subject;
+    const finalClass = isCustomClass ? formData.customClass.trim() : formData.class;
+    const finalSubject = isCustomSubject ? formData.customSubject.trim() : formData.subject;
     
     if (!selectedPeriod || !finalClass || !finalSubject || !formData.description.trim()) {
       toast({
@@ -108,11 +140,11 @@ const HomeTab = () => {
     setIsCustomSubject(false);
   };
 
-  const getPeriodActivity = (period) => {
+  const getPeriodActivity = (period: number): Activity | undefined => {
     return todayActivities.find(activity => activity.period === period);
   };
 
-  const navigateDate = (direction) => {
+  const navigateDate = (direction: 'prev' | 'next'): void => {
     const newDate = new Date(selectedDate);
     if (direction === 'prev') {
       newDate.setDate(newDate.getDate() - 1);
@@ -122,7 +154,7 @@ const HomeTab = () => {
     setSelectedDate(newDate);
   };
 
-  const getStatusColor = (activity) => {
+  const getStatusColor = (activity: Activity | undefined): string => {
     if (!activity) return 'bg-gray-50 border-gray-200';
     if (activity.isApproved) return 'theme-primary-light theme-border';
     if (activity.isRejected) return 'bg-red-50 border-red-200';
@@ -130,7 +162,7 @@ const HomeTab = () => {
     return 'bg-blue-50 border-blue-200';
   };
 
-  const getStatusIcon = (activity) => {
+  const getStatusIcon = (activity: Activity | undefined): JSX.Element => {
     if (!activity) return <Plus className="h-5 w-5 text-gray-400" />;
     if (activity.isApproved) return <CheckCircle2 className="h-5 w-5 theme-text" />;
     if (activity.isRejected) return <X className="h-5 w-5 text-red-600" />;
@@ -138,17 +170,17 @@ const HomeTab = () => {
     return <Clock className="h-5 w-5 text-blue-600" />;
   };
 
-  const getTeacherPendingCount = (teacherId) => {
+  const getTeacherPendingCount = (teacherId: string): number => {
     return pendingActivities.filter(activity => activity.teacherId === teacherId).length;
   };
 
-  const handleTeacherClick = (teacherId) => {
+  const handleTeacherClick = (teacherId: string): void => {
     const teacherPending = pendingActivities.filter(activity => activity.teacherId === teacherId);
     setSelectedTeacherPending(teacherPending);
     setIsPendingDialogOpen(true);
   };
 
-  const handleApprove = (activityId) => {
+  const handleApprove = (activityId: string): void => {
     approveActivity(activityId, user?.name || 'Principal');
     setSelectedTeacherPending(prev => prev.filter(activity => activity.id !== activityId));
     toast({
@@ -157,7 +189,7 @@ const HomeTab = () => {
     });
   };
 
-  const handleReject = (activityId, reason = 'Not specified') => {
+  const handleReject = (activityId: string, reason: string = 'Not specified'): void => {
     rejectActivity(activityId, user?.name || 'Principal', reason);
     setSelectedTeacherPending(prev => prev.filter(activity => activity.id !== activityId));
     toast({
