@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+from corsheaders.defaults import default_headers
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -54,7 +56,18 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = ["htt"]
+CORS_ALLOWED_ORIGINS = [
+    "http://65.1.92.242:8000",
+    "http://localhost:5173",
+    "http://localhost:8080",
+    "http://172.20.10.12:8080",
+    "http://172.28.112.1:8080",
+]
+
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "authorization",
+]
 
 ROOT_URLCONF = 'core.urls'
 
