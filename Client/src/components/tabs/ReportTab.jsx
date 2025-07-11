@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useActivity } from '@/contexts/ActivityContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +6,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Clock, BookOpen, Users, CalendarDays, CheckCircle2, Send, AlertCircle, BarChart3, Shield, User } from 'lucide-react';
+import { Clock, BookOpen, Users, CalendarDays, CheckCircle2, Send, AlertCircle, BarChart3, Shield, User, Notebook } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 
@@ -27,7 +27,6 @@ const ReportTab = () => {
       title: "Activity Approved",
       description: "The activity has been approved successfully.",
     });
-    // Close dialog and refresh data if needed
     setIsTeacherDetailOpen(false);
   };
 
@@ -38,7 +37,6 @@ const ReportTab = () => {
       description: "The activity has been rejected.",
       variant: "destructive"
     });
-    // Close dialog and refresh data if needed
     setIsTeacherDetailOpen(false);
   };
 
@@ -56,10 +54,34 @@ const ReportTab = () => {
     setSelectedTeacher(teacher);
     setIsTeacherDetailOpen(true);
   };
-  
+
   const teacherActivitiesForSelectedDate = selectedTeacher
     ? selectedActivities.filter(activity => activity.teacherId === selectedTeacher.id)
     : [];
+
+  const homeworkReportData = useMemo(() => {
+    const homeworkActivities = selectedActivities.filter(a => a.hasHomework);
+    if (homeworkActivities.length === 0) return [];
+
+    const report = homeworkActivities.reduce((acc, activity) => {
+      let teacherEntry = acc.find(t => t.teacherId === activity.teacherId);
+      if (teacherEntry) {
+        teacherEntry.homeworkCount += 1;
+        teacherEntry.subjects.add(activity.subject);
+      } else {
+        acc.push({
+          teacherId: activity.teacherId,
+          teacherName: activity.teacherName,
+          homeworkCount: 1,
+          subjects: new Set([activity.subject])
+        });
+      }
+      return acc;
+    }, []);
+
+    return report.map(t => ({ ...t, subjects: Array.from(t.subjects) }));
+  }, [selectedActivities]);
+
 
   const modifiers = {
     active: activeDates,
@@ -110,62 +132,35 @@ const ReportTab = () => {
           </CardContent>
         </Card>
 
-        {/* All Activities on Selected Date */}
+        {/* Homework Report Card for Principal */}
         {selectedDate && (
           <Card className="border-0 minimal-shadow-lg animate-slide-up">
-            <CardHeader className="theme-bg-light rounded-t-xl">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2">
-                  <CalendarDays className="h-5 w-5 theme-text" />
-                  <span className="theme-text">All Activities for {format(selectedDate, 'MMM d')}</span>
-                </CardTitle>
-                 {selectedActivities.length > 0 && (
-                  <div className="flex items-center space-x-2">
-                    <Badge className="theme-primary-light theme-text border-0">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      {stats.approved}
-                    </Badge>
-                    <Badge className="bg-amber-100 text-amber-800 border-0">
-                      <Send className="h-3 w-3 mr-1" />
-                      {stats.pending}
-                    </Badge>
-                  </div>
-                )}
-              </div>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Notebook className="h-5 w-5 theme-text" />
+                <span>Homework Report for {format(selectedDate, 'MMM d')}</span>
+              </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
-              {selectedActivities.length > 0 ? (
-                <div className="space-y-4">
-                  {selectedActivities.sort((a, b) => a.period - b.period).map(activity => (
-                    <div key={activity.id} className="p-4 rounded-xl border-0 bg-gray-50">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-2">
-                            <Badge variant="outline" className="text-xs border-gray-300">
-                              Period {activity.period}
-                            </Badge>
-                            {activity.isApproved ? (
-                              <Badge className="theme-primary-light theme-text">Approved</Badge>
-                            ) : activity.isRejected ? (
-                              <Badge variant="destructive">Rejected</Badge>
-                            ) : (
-                              <Badge className="bg-amber-100 text-amber-800">Pending</Badge>
-                            )}
-                          </div>
-                          <h4 className="font-semibold text-gray-900">{activity.subject}</h4>
-                          <p className="text-sm text-gray-600 truncate mb-2">{activity.description}</p>
-                          <p className="text-xs text-gray-500">
-                            Teacher: {activity.teacherName}
-                          </p>
-                        </div>
+            <CardContent>
+              {homeworkReportData.length > 0 ? (
+                <div className="space-y-3">
+                  {homeworkReportData.map(report => (
+                    <div key={report.teacherId} className="p-4 rounded-xl bg-gray-50 border">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-gray-800">{report.teacherName}</h4>
+                        <Badge variant="secondary">{report.homeworkCount} Assignment(s)</Badge>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {report.subjects.map(subject => (
+                          <Badge key={subject} variant="outline" className="font-normal">{subject}</Badge>
+                        ))}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <h3 className="font-semibold text-gray-900 mb-2">No Activities Found</h3>
-                  <p className="text-sm text-gray-600">No activities were recorded for any teacher on this date.</p>
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-500">No homework was assigned on this date.</p>
                 </div>
               )}
             </CardContent>
@@ -218,10 +213,9 @@ const ReportTab = () => {
             </DialogHeader>
             <div className="space-y-4">
               {teacherActivitiesForSelectedDate.length > 0 ? (
-                teacherActivitiesForSelectedDate.sort((a,b) => a.period - b.period).map(activity => (
-                  <div key={activity.id} className={`p-4 rounded-xl border-0 minimal-shadow ${
-                    activity.isApproved ? 'theme-primary-light' : activity.isRejected ? 'bg-red-50' : 'bg-amber-50'
-                  }`}>
+                teacherActivitiesForSelectedDate.sort((a, b) => a.period - b.period).map(activity => (
+                  <div key={activity.id} className={`p-4 rounded-xl border-0 minimal-shadow ${activity.isApproved ? 'theme-primary-light' : activity.isRejected ? 'bg-red-50' : 'bg-amber-50'
+                    }`}>
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <Badge variant="outline" className="text-xs border-gray-300 mb-2">
@@ -244,14 +238,14 @@ const ReportTab = () => {
                             </Button>
                           </div>
                         )}
-                         {activity.isApproved && (
+                        {activity.isApproved && (
                           <p className="text-xs theme-text mt-2 font-medium">
-                             ✓ Approved by {activity.approvedBy}
+                            ✓ Approved by {activity.approvedBy}
                           </p>
                         )}
                         {activity.isRejected && (
                           <p className="text-xs text-red-600 mt-2 font-medium">
-                             ✗ Rejected by {activity.rejectedBy}
+                            ✗ Rejected by {activity.rejectedBy}
                           </p>
                         )}
                       </div>
@@ -274,6 +268,8 @@ const ReportTab = () => {
   }
 
   // Teacher view
+  const homeworkActivitiesForDate = selectedActivities.filter(a => a.hasHomework);
+
   return (
     <div className="p-6 space-y-6 pb-32 max-w-2xl mx-auto">
       {/* Header */}
@@ -324,18 +320,6 @@ const ReportTab = () => {
               className="rounded-xl"
             />
           </div>
-          <div className="px-6 pb-4">
-            <div className="flex items-center justify-center space-x-6 text-sm">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 theme-primary rounded"></div>
-                <span className="text-gray-600">Active Days</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-gray-200 rounded"></div>
-                <span className="text-gray-600">No Activities</span>
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
@@ -348,101 +332,53 @@ const ReportTab = () => {
                 <CalendarDays className="h-5 w-5 theme-text" />
                 <span className="theme-text">{format(selectedDate, 'EEEE, MMM d')}</span>
               </CardTitle>
-              {selectedActivities.length > 0 && (
-                <div className="flex items-center space-x-2">
-                   <Badge className="theme-primary-light theme-text border-0">
-                     <CheckCircle2 className="h-3 w-3 mr-1" />
-                     {stats.approved}
-                   </Badge>
-                   <Badge className="bg-amber-100 text-amber-800 border-0">
-                     <Send className="h-3 w-3 mr-1" />
-                     {stats.pending}
-                   </Badge>
-                 </div>
-              )}
             </div>
           </CardHeader>
           <CardContent className="p-6">
             {selectedActivities.length > 0 ? (
               <div className="space-y-4">
-                {selectedActivities
-                  .sort((a, b) => a.period - b.period)
-                  .map(activity => (
-                    <div key={activity.id} className="group">
-                      <div className={`p-4 rounded-xl border-0 minimal-shadow transition-all duration-200 ${
-                        activity.isApproved
-                          ? 'theme-primary-light'
-                          : activity.isRejected
-                          ? 'bg-red-50'
-                          : activity.sentForApproval
-                          ? 'bg-amber-50'
-                          : 'bg-gray-50'
-                      }`}>
-                        <div className="flex items-start space-x-3">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                            activity.isApproved
-                              ? 'bg-white/80'
-                              : 'bg-white/60'
-                          }`}>
-                            {activity.isApproved ? (
-                              <CheckCircle2 className="h-5 w-5 theme-text" />
-                            ) : activity.isRejected ? (
-                              <AlertCircle className="h-5 w-5 text-red-600" />
-                            ) : activity.sentForApproval ? (
-                              <Send className="h-5 w-5 text-amber-600" />
-                            ) : (
-                              <Clock className="h-5 w-5 text-gray-600" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <Badge variant="outline" className="text-xs border-gray-300">
-                                Period {activity.period}
-                              </Badge>
-                              <Badge className="text-xs bg-blue-100 text-blue-800 border-0">
-                                <Users className="h-3 w-3 mr-1" />
-                                {activity.class}
-                              </Badge>
-                            </div>
-                            <h4 className="font-semibold text-gray-900 flex items-center mb-1">
-                              <BookOpen className="h-4 w-4 mr-2 text-blue-600" />
-                              {activity.subject}
-                            </h4>
-                            <p className="text-sm text-gray-600 leading-relaxed">{activity.description}</p>
-                            {activity.isApproved && (
-                              <p className="text-xs theme-text mt-2 font-medium">
-                                ✓ Approved by {activity.approvedBy}
-                              </p>
-                            )}
-                            {activity.isRejected && (
-                              <p className="text-xs text-red-600 mt-2 font-medium">
-                                ✗ Rejected by {activity.rejectedBy}
-                                {activity.rejectionReason && `: ${activity.rejectionReason}`}
-                              </p>
-                            )}
-                            {activity.sentForApproval && !activity.isApproved && !activity.isRejected && (
-                              <p className="text-xs text-amber-600 mt-2 font-medium">
-                                ⏳ Waiting for principal approval
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                {selectedActivities.sort((a, b) => a.period - b.period).map(activity => (
+                  <div key={activity.id} className="p-4 rounded-xl bg-gray-50 border">
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge variant="outline">Period {activity.period}</Badge>
+                      <Badge variant="secondary">{activity.class}</Badge>
                     </div>
-                  ))}
+                    <h4 className="font-semibold text-gray-800 mb-1">{activity.subject}</h4>
+                    <p className="text-sm text-gray-600">{activity.description}</p>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <CalendarDays className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-2">No activities recorded</h3>
-                <p className="text-sm text-gray-600 mb-4">Add activities from the Home tab to see them here</p>
-                <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3 max-w-xs mx-auto">
-                  {format(selectedDate, 'MMMM d, yyyy')}
-                </div>
+                <h3 className="font-semibold">No activities recorded for this date.</h3>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Homework Activities for Selected Date */}
+      {selectedDate && homeworkActivitiesForDate.length > 0 && (
+        <Card className="border-0 minimal-shadow-lg animate-slide-up">
+          <CardHeader className="theme-bg-light rounded-t-xl">
+            <CardTitle className="flex items-center space-x-2">
+              <Notebook className="h-5 w-5 theme-text" />
+              <span className="theme-text">Homework on {format(selectedDate, 'MMM d')}</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {homeworkActivitiesForDate.map(activity => (
+                <div key={activity.id} className="p-4 rounded-xl border bg-gray-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <Badge variant="outline">Period {activity.period}</Badge>
+                    <Badge variant="secondary">{activity.class}</Badge>
+                  </div>
+                  <h4 className="font-semibold text-gray-800 mb-1">{activity.subject}</h4>
+                  <p className="text-sm text-gray-600">{activity.homeworkDescription}</p>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

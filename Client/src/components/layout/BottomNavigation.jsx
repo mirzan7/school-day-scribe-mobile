@@ -4,7 +4,6 @@ import { Home, Calendar, User } from 'lucide-react';
 const BottomNavigation = ({ activeTab, onTabChange }) => {
   const tabs = [
     { id: 'home', label: 'Home', icon: Home },
-    { id: 'homework', label: 'Homework', icon: Calendar },
     { id: 'report', label: 'Report', icon: Calendar },
     { id: 'profile', label: 'Profile', icon: User },
   ];
