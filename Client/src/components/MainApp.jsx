@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import AppHeader from '@/components/layout/AppHeader';
 import BottomNavigation from '@/components/layout/BottomNavigation';
 import HomeTab from '@/components/tabs/HomeTab';
+import HomeworkTab from '@/components/tabs/HomeworkTab';
 import ReportTab from '@/components/tabs/ReportTab';
 import ProfileTab from '@/components/tabs/ProfileTab';
 
@@ -12,6 +13,8 @@ const MainApp = () => {
     switch (activeTab) {
       case 'home':
         return 'Timetable';
+      case 'homework':
+        return 'Homework';
       case 'report':
         return 'Reports';
       case 'profile':
@@ -25,6 +28,8 @@ const MainApp = () => {
     switch (activeTab) {
       case 'home':
         return <HomeTab />;
+      case 'homework':
+        return <HomeworkTab />;
       case 'report':
         return <ReportTab />;
       case 'profile':
