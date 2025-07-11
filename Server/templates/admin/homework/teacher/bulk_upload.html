@@ -1,0 +1,72 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block title %}Bulk Upload Teachers{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Home</a>
+    &rsaquo; <a href="{% url 'admin:homework_teacher_changelist' %}">Teachers</a>
+    &rsaquo; Bulk Upload
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="module aligned">
+    <h1>Bulk Upload Teachers</h1>
+    
+    <div class="form-row">
+        <div class="help">
+            <p><strong>Instructions:</strong></p>
+            <ul>
+                <li>Download the template Excel file below</li>
+                <li>Fill in the teacher information (name, phone_number, department)</li>
+                <li>Username will be auto-generated as: name@evps (e.g., john.doe@evps)</li>
+                <li>Password will be set to the phone number</li>
+                <li>Teacher ID will be auto-generated (T001, T002, etc.)</li>
+                <li>Upload the completed Excel file</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <a href="{% url 'admin:homework_teacher_download_template' %}" class="button">Download Template</a>
+    </div>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <fieldset class="module aligned">
+            <div class="form-row">
+                <div>
+                    <label for="excel_file">Excel File:</label>
+                    <input type="file" name="excel_file" id="excel_file" accept=".xlsx,.xls" required>
+                </div>
+            </div>
+        </fieldset>
+        
+        <div class="submit-row">
+            <input type="submit" value="Upload Teachers" class="default">
+            <a href="{% url 'admin:homework_teacher_changelist' %}" class="button cancel-link">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.help {
+    background: #f8f8f8;
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 4px;
+}
+
+.help ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.help li {
+    margin: 5px 0;
+}
+</style>
+{% endblock %}
