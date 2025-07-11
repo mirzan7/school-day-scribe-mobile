@@ -9,24 +9,26 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Clock, BookOpen, Calendar as CalendarIcon, ChevronLeft, ChevronRight, CheckCircle2, Send, PlusCircle, User, Shield, X, Check } from 'lucide-react';
+import { Plus, Clock, BookOpen, Calendar as CalendarIcon, ChevronRight, CheckCircle2, Send, PlusCircle, User, Shield, X, Check, Camera, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 
 const HomeTab = () => {
   const { addActivity, getActivitiesByDate, getAllClasses, getAllSubjects, addCustomClass, addCustomSubject, getPendingActivities, approveActivity, rejectActivity, getAllTeachers } = useActivity();
   const { user } = useAuth();
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [isCustomClass, setIsCustomClass] = useState(false);
   const [isCustomSubject, setIsCustomSubject] = useState(false);
   const [isPendingDialogOpen, setIsPendingDialogOpen] = useState(false);
   const [selectedTeacherPending, setSelectedTeacherPending] = useState([]);
-  const [existingHomework, setExistingHomework] = useState([]); // --- [ADDED] State for existing homework
+  const [existingHomework, setExistingHomework] = useState([]);
+
+  // State for managing description vs. photo input
+  const [inputType, setInputType] = useState('description');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   const [formData, setFormData] = useState({
     class: '',
@@ -41,48 +43,75 @@ const HomeTab = () => {
   const periods = Array.from({ length: 8 }, (_, i) => i + 1);
   const dateString = format(new Date(), 'yyyy-MM-dd');
   const todayActivities = getActivitiesByDate(dateString);
-
   const allClasses = getAllClasses();
   const allSubjects = getAllSubjects();
   const allTeachers = getAllTeachers();
   const pendingActivities = getPendingActivities();
 
-  // --- [ADDED] Effect to check for existing homework when a class is selected ---
+  // Effect to check for existing homework when a class is selected
   useEffect(() => {
     if (formData.class && todayActivities) {
       const homeworkForClass = todayActivities.filter(activity =>
         activity.class === formData.class &&
         activity.hasHomework &&
-        activity.period !== selectedPeriod // Exclude the period currently being edited
+        activity.period !== selectedPeriod
       );
       setExistingHomework(homeworkForClass);
     } else {
-      setExistingHomework([]); // Clear if no class is selected
+      setExistingHomework([]);
     }
   }, [formData.class, todayActivities, selectedPeriod]);
 
 
+  const resetFormState = () => {
+    setFormData({ class: '', subject: '', description: '', customClass: '', customSubject: '', hasHomework: false, homeworkDescription: '' });
+    setIsCustomClass(false);
+    setIsCustomSubject(false);
+    setInputType('description');
+    setPhotoFile(null);
+    setImagePreview(null);
+    setExistingHomework([]);
+  };
+
   const handleAddActivity = (period) => {
+    resetFormState(); // Reset all states first
     setSelectedPeriod(period);
     setIsDialogOpen(true);
 
     const existingActivity = todayActivities.find(a => a.period === period);
     if (existingActivity) {
       setFormData({
-        class: existingActivity.class,
-        subject: existingActivity.subject,
-        description: existingActivity.description,
+        class: existingActivity.class || '',
+        subject: existingActivity.subject || '',
+        description: existingActivity.description || '',
         customClass: '',
         customSubject: '',
         hasHomework: existingActivity.hasHomework || false,
         homeworkDescription: existingActivity.homeworkDescription || ''
       });
-      setIsCustomClass(!allClasses.slice(0, 10).includes(existingActivity.class));
-      setIsCustomSubject(!allSubjects.slice(0, 8).includes(existingActivity.subject));
+
+      // Set input type based on existing activity data
+      if (existingActivity.photoURL) {
+        setInputType('photo');
+        setImagePreview(existingActivity.photoURL);
+      } else {
+        setInputType('description');
+      }
+
+      setIsCustomClass(!allClasses.includes(existingActivity.class));
+      setIsCustomSubject(!allSubjects.includes(existingActivity.subject));
+    }
+  };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setPhotoFile(file);
+      setImagePreview(URL.createObjectURL(file));
     } else {
-      setFormData({ class: '', subject: '', description: '', customClass: '', customSubject: '', hasHomework: false, homeworkDescription: '' });
-      setIsCustomClass(false);
-      setIsCustomSubject(false);
+      setPhotoFile(null);
+      setImagePreview(null);
+      toast({ title: "Invalid File", description: "Please select an image.", variant: "destructive" });
     }
   };
 
@@ -92,29 +121,32 @@ const HomeTab = () => {
     const finalClass = isCustomClass ? formData.customClass.trim() : formData.class;
     const finalSubject = isCustomSubject ? formData.customSubject.trim() : formData.subject;
 
-    if (!selectedPeriod || !finalClass || !finalSubject || !formData.description.trim()) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all fields",
-        variant: "destructive"
-      });
+    if (!selectedPeriod || !finalClass || !finalSubject) {
+      toast({ title: "Missing Information", description: "Please select a class and subject.", variant: "destructive" });
+      return;
+    }
+
+    // Validation for either description or photo
+    if (inputType === 'description' && !formData.description.trim()) {
+      toast({ title: "Missing Description", description: "Please describe the activity.", variant: "destructive" });
+      return;
+    }
+    if (inputType === 'photo' && !photoFile && !imagePreview) {
+      toast({ title: "Missing Photo", description: "Please upload a photo of the work.", variant: "destructive" });
       return;
     }
 
     if (formData.hasHomework && !formData.homeworkDescription.trim()) {
-      toast({
-        title: "Missing Homework Details",
-        description: "Please describe the homework you assigned.",
-        variant: "destructive"
-      });
+      toast({ title: "Missing Homework Details", description: "Please describe the homework.", variant: "destructive" });
       return;
     }
 
-    if (isCustomClass && formData.customClass.trim()) {
-      addCustomClass(formData.customClass.trim());
-    }
-    if (isCustomSubject && formData.customSubject.trim()) {
-      addCustomSubject(formData.customSubject.trim());
+    if (photoFile) {
+      toast({
+        title: "Backend Required",
+        description: "Photo upload requires a backend. This is a demo.",
+        variant: "destructive"
+      });
     }
 
     addActivity({
@@ -122,35 +154,29 @@ const HomeTab = () => {
       period: selectedPeriod,
       class: finalClass,
       subject: finalSubject,
-      description: formData.description.trim(),
       hasHomework: formData.hasHomework,
-      homeworkDescription: formData.homeworkDescription.trim()
+      homeworkDescription: formData.homeworkDescription.trim(),
+      // Pass inputType and data accordingly
+      inputType: inputType,
+      description: inputType === 'description' ? formData.description.trim() : '',
+      photoURL: inputType === 'photo' ? imagePreview : '' // In a real app, this would be the URL from storage
     });
 
     toast({
       title: "Activity Sent for Approval",
-      description: `Period ${selectedPeriod} activity has been sent to the principal for approval`,
+      description: `Period ${selectedPeriod} activity is awaiting approval.`,
     });
 
     setIsDialogOpen(false);
-    setFormData({ class: '', subject: '', description: '', customClass: '', customSubject: '', hasHomework: false, homeworkDescription: '' });
-    setIsCustomClass(false);
-    setIsCustomSubject(false);
+    resetFormState();
   };
+
 
   const getPeriodActivity = (period) => {
     return todayActivities.find(activity => activity.period === period);
   };
 
-  const navigateDate = (direction) => {
-    const newDate = new Date(selectedDate);
-    if (direction === 'prev') {
-      newDate.setDate(newDate.getDate() - 1);
-    } else {
-      newDate.setDate(newDate.getDate() + 1);
-    }
-    setSelectedDate(newDate);
-  };
+
 
   const getStatusColor = (activity) => {
     if (!activity) return 'bg-gray-50 border-gray-200';
@@ -495,7 +521,14 @@ const HomeTab = () => {
                       {activity ? (
                         <div className="space-y-1">
                           <p className="font-medium text-gray-700">{activity.class} • {activity.subject}</p>
-                          <p className="text-sm text-gray-600 line-clamp-1">{activity.description}</p>
+                          {activity.inputType === 'photo' ? (
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Camera className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                              <span>Photo of work attached</span>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-600 line-clamp-1">{activity.description}</p>
+                          )}
                           {activity.isApproved && (
                             <p className="text-xs theme-text font-medium">✓ Approved by {activity.approvedBy}</p>
                           )}
@@ -626,6 +659,42 @@ const HomeTab = () => {
                 </Select>
               )}
             </div>
+
+            <div className="space-y-2">
+              <Label>Activity Details</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant={inputType === 'description' ? 'secondary' : 'outline'} onClick={() => setInputType('description')}>
+                  <Pencil className="h-4 w-4 mr-2" /> Write
+                </Button>
+                <Button type="button" variant={inputType === 'photo' ? 'secondary' : 'outline'} onClick={() => setInputType('photo')}>
+                  <Camera className="h-4 w-4 mr-2" /> Upload Photo
+                </Button>
+              </div>
+            </div>
+
+            {inputType === 'description' ? (
+              <div className="space-y-2 animate-fade-in">
+                <Textarea placeholder="Describe the work done..." value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} rows={4} />
+              </div>
+            ) : (
+              <div className="space-y-2 animate-fade-in">
+                {imagePreview ? (
+                  <div className="relative group">
+                    <img src={imagePreview} alt="Work preview" className="rounded-lg w-full max-h-60 object-contain border bg-slate-50" />
+                    <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => { setPhotoFile(null); setImagePreview(null); }}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Label htmlFor="photo-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                    <Camera className="w-8 h-8 mb-3 text-gray-400" />
+                    <p className="text-sm text-gray-500 font-semibold">Click to upload photo</p>
+                    <Input id="photo-upload" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
+                  </Label>
+                )}
+              </div>
+            )}
+
             <div className="space-y-2">
               <div className="flex items-center justify-between rounded-xl border border-gray-200 p-3">
                 <Label htmlFor="homework-switch" className="text-sm font-medium text-gray-700 cursor-pointer">
@@ -651,17 +720,6 @@ const HomeTab = () => {
                 />
               </div>
             )}
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Activity Description</Label>
-              <Textarea
-                placeholder="What did you teach today?"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                rows={3}
-                className="rounded-xl border-gray-200 resize-none"
-              />
-            </div>
 
             <div className="flex space-x-3 pt-4">
               <Button
