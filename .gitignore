@@ -1,1 +1,80 @@
 /Server/venv
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+ENV/
+env/
+.venv/
+
+# Django stuff:
+*.log
+*.pot
+*.pyc
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+static/
+
+# Django migrations
+*/migrations/
+!*/migrations/__init__.py
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Testing
+.coverage
+htmlcov/
+.tox/
+.nox/
+.pytest_cache/
+
+# Environment variables and secrets
+.env
+*.env
+.env.*
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+.pyre/
+
+# Pip
+pip-log.txt
+
+# Docker
+*.pid
+*.seed
+*.tar
+*.bak
+*.bak.*
+*.orig
+*.tmp
+*.log
+*.lock
+docker-compose.override.yml
+
+# Coverage reports
+coverage.xml
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Other project-specific
+local_settings.py
