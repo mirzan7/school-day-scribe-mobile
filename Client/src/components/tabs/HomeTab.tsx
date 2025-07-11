@@ -53,7 +53,6 @@ const HomeTab: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null);
-  const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
   const [isCustomClass, setIsCustomClass] = useState<boolean>(false);
   const [isCustomSubject, setIsCustomSubject] = useState<boolean>(false);
   const [isPendingDialogOpen, setIsPendingDialogOpen] = useState<boolean>(false);
@@ -68,7 +67,7 @@ const HomeTab: React.FC = () => {
   });
 
   const periods: number[] = Array.from({ length: 8 }, (_, i) => i + 1);
-  const dateString: string = format(selectedDate, 'yyyy-MM-dd');
+  const dateString: string = format(new Date(), 'yyyy-MM-dd'); // Always use today's date
   const todayActivities: Activity[] = getActivitiesByDate(dateString);
 
   const allClasses: string[] = getAllClasses();
@@ -445,61 +444,13 @@ const HomeTab: React.FC = () => {
       <div className="text-center space-y-4 animate-fade-in">
         <h2 className="text-2xl font-bold text-gray-900">Today's Schedule</h2>
 
-        {/* Date Navigation */}
-        <div className="flex items-center justify-center space-x-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigateDate('prev')}
-            className="h-10 w-10 rounded-full hover:bg-gray-100"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-
-          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="min-w-[240px] justify-center text-center font-medium border-gray-200 hover:border-gray-300 rounded-xl"
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(selectedDate, 'EEEE, MMM d')}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 rounded-xl minimal-shadow-lg" align="center">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => {
-                  if (date) {
-                    setSelectedDate(date);
-                    setIsCalendarOpen(false);
-                  }
-                }}
-                initialFocus
-                className="rounded-xl"
-              />
-            </PopoverContent>
-          </Popover>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigateDate('next')}
-            className="h-10 w-10 rounded-full hover:bg-gray-100"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+        {/* Current Date Display */}
+        <div className="text-center">
+          <div className="inline-flex items-center space-x-2 px-4 py-2 bg-white/80 rounded-xl border border-gray-200">
+            <CalendarIcon className="h-4 w-4 theme-text" />
+            <span className="font-medium text-gray-900">{format(new Date(), 'EEEE, MMM d, yyyy')}</span>
+          </div>
         </div>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setSelectedDate(new Date())}
-          className="text-sm theme-text hover:theme-primary-light rounded-lg"
-        >
-          Jump to Today
-        </Button>
       </div>
 
       {/* Progress Indicator */}
