@@ -1,17 +1,11 @@
-
 import React from 'react';
 import { Home, Calendar, User } from 'lucide-react';
 
-interface BottomNavigationProps {
-  activeTab: 'home' | 'report' | 'profile';
-  onTabChange: (tab: 'home' | 'report' | 'profile') => void;
-}
-
-const BottomNavigation: React.FC<BottomNavigationProps> = ({ activeTab, onTabChange }) => {
+const BottomNavigation = ({ activeTab, onTabChange }) => {
   const tabs = [
-    { id: 'home' as const, label: 'Home', icon: Home },
-    { id: 'report' as const, label: 'Report', icon: Calendar },
-    { id: 'profile' as const, label: 'Profile', icon: User },
+    { id: 'home', label: 'Home', icon: Home },
+    { id: 'report', label: 'Report', icon: Calendar },
+    { id: 'profile', label: 'Profile', icon: User },
   ];
 
   return (

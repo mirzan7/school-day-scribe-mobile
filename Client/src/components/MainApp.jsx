@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import AppHeader from '@/components/layout/AppHeader';
 import BottomNavigation from '@/components/layout/BottomNavigation';
@@ -7,7 +6,7 @@ import ReportTab from '@/components/tabs/ReportTab';
 import ProfileTab from '@/components/tabs/ProfileTab';
 
 const MainApp = () => {
-  const [activeTab, setActiveTab] = useState<'home' | 'report' | 'profile'>('home');
+  const [activeTab, setActiveTab] = useState('home');
 
   const getTabTitle = () => {
     switch (activeTab) {
