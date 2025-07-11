@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useActivity } from '@/contexts/ActivityContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -15,67 +16,53 @@ import { toast } from '@/hooks/use-toast';
 import { Plus, Clock, BookOpen, Calendar as CalendarIcon, ChevronLeft, ChevronRight, CheckCircle2, Send, PlusCircle, User, Shield, X, Check } from 'lucide-react';
 import { format } from 'date-fns';
 
-interface FormData {
-  class: string;
-  subject: string;
-  description: string;
-  customClass: string;
-  customSubject: string;
-}
-
-interface Activity {
-  id: string;
-  date: string;
-  period: number;
-  class: string;
-  subject: string;
-  description: string;
-  teacherId?: string;
-  teacherName?: string;
-  isApproved?: boolean;
-  isRejected?: boolean;
-  sentForApproval?: boolean;
-  approvedBy?: string;
-  rejectedBy?: string;
-  createdAt?: string;
-}
-
-interface Teacher {
-  id: string;
-  name: string;
-  department: string;
-  teacherId: string;
-}
-
-const HomeTab: React.FC = () => {
+const HomeTab = () => {
   const { addActivity, getActivitiesByDate, getAllClasses, getAllSubjects, addCustomClass, addCustomSubject, getPendingActivities, approveActivity, rejectActivity, getAllTeachers } = useActivity();
   const { user } = useAuth();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
-  const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null);
-  const [isCustomClass, setIsCustomClass] = useState<boolean>(false);
-  const [isCustomSubject, setIsCustomSubject] = useState<boolean>(false);
-  const [isPendingDialogOpen, setIsPendingDialogOpen] = useState<boolean>(false);
-  const [selectedTeacherPending, setSelectedTeacherPending] = useState<Activity[]>([]);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [isCustomClass, setIsCustomClass] = useState(false);
+  const [isCustomSubject, setIsCustomSubject] = useState(false);
+  const [isPendingDialogOpen, setIsPendingDialogOpen] = useState(false);
+  const [selectedTeacherPending, setSelectedTeacherPending] = useState([]);
+  const [existingHomework, setExistingHomework] = useState([]); // --- [ADDED] State for existing homework
 
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState({
     class: '',
     subject: '',
     description: '',
     customClass: '',
-    customSubject: ''
+    customSubject: '',
+    hasHomework: false,
+    homeworkDescription: ''
   });
 
-  const periods: number[] = Array.from({ length: 8 }, (_, i) => i + 1);
-  const dateString: string = format(new Date(), 'yyyy-MM-dd'); // Always use today's date
-  const todayActivities: Activity[] = getActivitiesByDate(dateString);
+  const periods = Array.from({ length: 8 }, (_, i) => i + 1);
+  const dateString = format(new Date(), 'yyyy-MM-dd');
+  const todayActivities = getActivitiesByDate(dateString);
 
-  const allClasses: string[] = getAllClasses();
-  const allSubjects: string[] = getAllSubjects();
-  const allTeachers: Teacher[] = getAllTeachers();
-  const pendingActivities: Activity[] = getPendingActivities();
+  const allClasses = getAllClasses();
+  const allSubjects = getAllSubjects();
+  const allTeachers = getAllTeachers();
+  const pendingActivities = getPendingActivities();
 
-  const handleAddActivity = (period: number): void => {
+  // --- [ADDED] Effect to check for existing homework when a class is selected ---
+  useEffect(() => {
+    if (formData.class && todayActivities) {
+      const homeworkForClass = todayActivities.filter(activity =>
+        activity.class === formData.class &&
+        activity.hasHomework &&
+        activity.period !== selectedPeriod // Exclude the period currently being edited
+      );
+      setExistingHomework(homeworkForClass);
+    } else {
+      setExistingHomework([]); // Clear if no class is selected
+    }
+  }, [formData.class, todayActivities, selectedPeriod]);
+
+
+  const handleAddActivity = (period) => {
     setSelectedPeriod(period);
     setIsDialogOpen(true);
 
@@ -86,18 +73,20 @@ const HomeTab: React.FC = () => {
         subject: existingActivity.subject,
         description: existingActivity.description,
         customClass: '',
-        customSubject: ''
+        customSubject: '',
+        hasHomework: existingActivity.hasHomework || false,
+        homeworkDescription: existingActivity.homeworkDescription || ''
       });
       setIsCustomClass(!allClasses.slice(0, 10).includes(existingActivity.class));
       setIsCustomSubject(!allSubjects.slice(0, 8).includes(existingActivity.subject));
     } else {
-      setFormData({ class: '', subject: '', description: '', customClass: '', customSubject: '' });
+      setFormData({ class: '', subject: '', description: '', customClass: '', customSubject: '', hasHomework: false, homeworkDescription: '' });
       setIsCustomClass(false);
       setIsCustomSubject(false);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     const finalClass = isCustomClass ? formData.customClass.trim() : formData.class;
@@ -112,7 +101,15 @@ const HomeTab: React.FC = () => {
       return;
     }
 
-    // Add custom class/subject to lists if they're new
+    if (formData.hasHomework && !formData.homeworkDescription.trim()) {
+      toast({
+        title: "Missing Homework Details",
+        description: "Please describe the homework you assigned.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (isCustomClass && formData.customClass.trim()) {
       addCustomClass(formData.customClass.trim());
     }
@@ -125,7 +122,9 @@ const HomeTab: React.FC = () => {
       period: selectedPeriod,
       class: finalClass,
       subject: finalSubject,
-      description: formData.description.trim()
+      description: formData.description.trim(),
+      hasHomework: formData.hasHomework,
+      homeworkDescription: formData.homeworkDescription.trim()
     });
 
     toast({
@@ -134,16 +133,16 @@ const HomeTab: React.FC = () => {
     });
 
     setIsDialogOpen(false);
-    setFormData({ class: '', subject: '', description: '', customClass: '', customSubject: '' });
+    setFormData({ class: '', subject: '', description: '', customClass: '', customSubject: '', hasHomework: false, homeworkDescription: '' });
     setIsCustomClass(false);
     setIsCustomSubject(false);
   };
 
-  const getPeriodActivity = (period: number): Activity | undefined => {
+  const getPeriodActivity = (period) => {
     return todayActivities.find(activity => activity.period === period);
   };
 
-  const navigateDate = (direction: 'prev' | 'next'): void => {
+  const navigateDate = (direction) => {
     const newDate = new Date(selectedDate);
     if (direction === 'prev') {
       newDate.setDate(newDate.getDate() - 1);
@@ -153,7 +152,7 @@ const HomeTab: React.FC = () => {
     setSelectedDate(newDate);
   };
 
-  const getStatusColor = (activity: Activity | undefined): string => {
+  const getStatusColor = (activity) => {
     if (!activity) return 'bg-gray-50 border-gray-200';
     if (activity.isApproved) return 'theme-primary-light theme-border';
     if (activity.isRejected) return 'bg-red-50 border-red-200';
@@ -161,7 +160,7 @@ const HomeTab: React.FC = () => {
     return 'bg-blue-50 border-blue-200';
   };
 
-  const getStatusIcon = (activity: Activity | undefined): JSX.Element => {
+  const getStatusIcon = (activity) => {
     if (!activity) return <Plus className="h-5 w-5 text-gray-400" />;
     if (activity.isApproved) return <CheckCircle2 className="h-5 w-5 theme-text" />;
     if (activity.isRejected) return <X className="h-5 w-5 text-red-600" />;
@@ -169,17 +168,17 @@ const HomeTab: React.FC = () => {
     return <Clock className="h-5 w-5 text-blue-600" />;
   };
 
-  const getTeacherPendingCount = (teacherId: string): number => {
+  const getTeacherPendingCount = (teacherId) => {
     return pendingActivities.filter(activity => activity.teacherId === teacherId).length;
   };
 
-  const handleTeacherClick = (teacherId: string): void => {
+  const handleTeacherClick = (teacherId) => {
     const teacherPending = pendingActivities.filter(activity => activity.teacherId === teacherId);
     setSelectedTeacherPending(teacherPending);
     setIsPendingDialogOpen(true);
   };
 
-  const handleApprove = (activityId: string): void => {
+  const handleApprove = (activityId) => {
     approveActivity(activityId, user?.name || 'Principal');
     setSelectedTeacherPending(prev => prev.filter(activity => activity.id !== activityId));
     toast({
@@ -188,7 +187,7 @@ const HomeTab: React.FC = () => {
     });
   };
 
-  const handleReject = (activityId: string, reason: string = 'Not specified'): void => {
+  const handleReject = (activityId, reason = 'Not specified') => {
     rejectActivity(activityId, user?.name || 'Principal', reason);
     setSelectedTeacherPending(prev => prev.filter(activity => activity.id !== activityId));
     toast({
@@ -226,44 +225,44 @@ const HomeTab: React.FC = () => {
               {pendingActivities.slice(0, 5).map(activity => (
                 <div key={activity.id} className="apple-card p-5">
                   <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <Badge variant="outline" className="text-xs">
-                            Period {activity.period}
-                          </Badge>
-                          <Badge className="text-xs bg-blue-100 text-blue-800 border-0">
-                            {activity.class}
-                          </Badge>
-                          <Badge className="text-xs bg-green-100 text-green-800 border-0">
-                            {activity.subject}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">{activity.description}</p>
-                        <p className="text-xs text-gray-500">
-                          {format(new Date(activity.date), 'MMM d, yyyy')} • {activity.teacherName}
-                        </p>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Badge variant="outline" className="text-xs">
+                          Period {activity.period}
+                        </Badge>
+                        <Badge className="text-xs bg-blue-100 text-blue-800 border-0">
+                          {activity.class}
+                        </Badge>
+                        <Badge className="text-xs bg-green-100 text-green-800 border-0">
+                          {activity.subject}
+                        </Badge>
                       </div>
-                      <div className="flex space-x-3 ml-4">
-                        <Button
-                          size="sm"
-                          onClick={() => handleApprove(activity.id)}
-                          className="apple-button theme-primary text-white border-0 hover:scale-105"
-                        >
-                          <Check className="h-4 w-4 mr-1" />
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleReject(activity.id)}
-                          className="apple-button bg-red-500 text-white border-0 hover:bg-red-600 hover:scale-105"
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Reject
-                        </Button>
-                      </div>
+                      <p className="text-sm text-gray-600 mb-2">{activity.description}</p>
+                      <p className="text-xs text-gray-500">
+                        {format(new Date(activity.date), 'MMM d, yyyy')} • {activity.teacherName}
+                      </p>
+                    </div>
+                    <div className="flex space-x-3 ml-4">
+                      <Button
+                        size="sm"
+                        onClick={() => handleApprove(activity.id)}
+                        className="apple-button theme-primary text-white border-0 hover:scale-105"
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleReject(activity.id)}
+                        className="apple-button bg-red-500 text-white border-0 hover:bg-red-600 hover:scale-105"
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Reject
+                      </Button>
                     </div>
                   </div>
+                </div>
               ))}
             </div>
             {pendingActivities.length > 5 && (
@@ -279,12 +278,12 @@ const HomeTab: React.FC = () => {
         {/* Teachers Overview */}
         <Card className="apple-card-elevated border-0 minimal-shadow-lg animate-slide-up">
           <CardContent className="p-6">
-          <h3 className="text-xl font-semibold theme-text mb-6 flex items-center">
-            <div className="w-10 h-10 theme-bg-light rounded-2xl flex items-center justify-center mr-3">
-              <User className="h-5 w-5 theme-text" />
-            </div>
-            Teachers Overview
-          </h3>
+            <h3 className="text-xl font-semibold theme-text mb-6 flex items-center">
+              <div className="w-10 h-10 theme-bg-light rounded-2xl flex items-center justify-center mr-3">
+                <User className="h-5 w-5 theme-text" />
+              </div>
+              Teachers Overview
+            </h3>
             <div className="grid gap-3">
               {allTeachers
                 .sort((a, b) => {
@@ -306,44 +305,43 @@ const HomeTab: React.FC = () => {
                   if (!bLatestActivity) return -1;
 
                   return new Date(bLatestActivity.createdAt || bLatestActivity.date).getTime() -
-                          new Date(aLatestActivity.createdAt || aLatestActivity.date).getTime();
+                    new Date(aLatestActivity.createdAt || aLatestActivity.date).getTime();
                 })
                 .map(teacher => {
-                const pendingCount = getTeacherPendingCount(teacher.id);
-                return (
-                  <div
-                    key={teacher.id}
-                    onClick={() => pendingCount > 0 && handleTeacherClick(teacher.id)}
-                    className={`p-4 rounded-xl border-0 minimal-shadow transition-all duration-200 ${
-                      pendingCount > 0
+                  const pendingCount = getTeacherPendingCount(teacher.id);
+                  return (
+                    <div
+                      key={teacher.id}
+                      onClick={() => pendingCount > 0 && handleTeacherClick(teacher.id)}
+                      className={`p-4 rounded-xl border-0 minimal-shadow transition-all duration-200 ${pendingCount > 0
                         ? 'bg-amber-50 cursor-pointer hover:scale-[1.02]'
                         : 'bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-lg bg-white/80 flex items-center justify-center minimal-shadow">
-                          <User className="h-5 w-5 text-blue-600" />
+                        }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-lg bg-white/80 flex items-center justify-center minimal-shadow">
+                            <User className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{teacher.name}</h4>
+                            <p className="text-sm text-gray-600">{teacher.department}</p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">{teacher.name}</h4>
-                          <p className="text-sm text-gray-600">{teacher.department}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {pendingCount > 0 && (
-                          <Badge className="bg-amber-100 text-amber-800 border-0">
-                            {pendingCount} pending
+                        <div className="flex items-center space-x-2">
+                          {pendingCount > 0 && (
+                            <Badge className="bg-amber-100 text-amber-800 border-0">
+                              {pendingCount} pending
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="text-xs">
+                            ID: {teacher.teacherId}
                           </Badge>
-                        )}
-                        <Badge variant="outline" className="text-xs">
-                          ID: {teacher.teacherId}
-                        </Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </CardContent>
         </Card>
@@ -571,6 +569,28 @@ const HomeTab: React.FC = () => {
                 </Select>
               )}
             </div>
+            {!isCustomClass && existingHomework.length > 0 && (
+              <Card className="p-3 bg-amber-50 border-amber-200 animate-fade-in">
+                <CardHeader className="p-0 pb-2 flex-row items-center">
+                  <BookOpen className="h-4 w-4 mr-2 text-amber-800" />
+                  <CardTitle className="text-sm font-semibold text-amber-800">
+                    Homework Already Assigned
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <p className="text-xs text-amber-700 mb-2">
+                    Found {existingHomework.length} assignment(s) for <strong>{formData.class}</strong> today:
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {existingHomework.map(hw => (
+                      <Badge key={hw.id || hw.period} variant="outline" className="bg-white border-amber-300 text-amber-900">
+                        {hw.subject}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -606,6 +626,31 @@ const HomeTab: React.FC = () => {
                 </Select>
               )}
             </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between rounded-xl border border-gray-200 p-3">
+                <Label htmlFor="homework-switch" className="text-sm font-medium text-gray-700 cursor-pointer">
+                  Homework Assigned?
+                </Label>
+                <Switch
+                  id="homework-switch"
+                  checked={formData.hasHomework}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, hasHomework: checked }))}
+                />
+              </div>
+            </div>
+
+            {formData.hasHomework && (
+              <div className="space-y-2 animate-fade-in">
+                <Label className="text-sm font-medium text-gray-700">Homework Details</Label>
+                <Textarea
+                  placeholder="What is the homework assignment?"
+                  value={formData.homeworkDescription}
+                  onChange={(e) => setFormData(prev => ({ ...prev, homeworkDescription: e.target.value }))}
+                  rows={3}
+                  className="rounded-xl border-gray-200 resize-none"
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Activity Description</Label>
