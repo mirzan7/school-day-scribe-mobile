@@ -4,3 +4,6 @@ django-cors-headers==4.4.0
 channels==4.1.0
 channels-redis==4.2.0
 redis==5.0.8
+pandas==2.1.4
+openpyxl==3.1.2
+Pillow==10.1.0

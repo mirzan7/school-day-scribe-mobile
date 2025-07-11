@@ -56,6 +56,7 @@ interface Homework {
   rejection_reason?: string;
   is_overdue: boolean;
   days_until_due: number;
+  image_url?: string;
 }
 
 interface Class {
@@ -64,6 +65,9 @@ interface Class {
   section: string;
   grade: number;
   homework_count: number;
+  homework_count_today: number;
+  homework_limit: number;
+  can_assign_more: boolean;
 }
 
 interface Subject {
@@ -75,6 +79,7 @@ interface Subject {
 interface HomeworkFormData {
   title: string;
   description: string;
+  image: File | null;
   class_assigned: string;
   subject: string;
   due_date: Date | undefined;
@@ -99,6 +104,7 @@ const HomeworkTab: React.FC = () => {
   const [formData, setFormData] = useState<HomeworkFormData>({
     title: '',
     description: '',
+    image: null,
     class_assigned: '',
     subject: '',
     due_date: undefined,
@@ -239,7 +245,7 @@ const HomeworkTab: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.description || !formData.class_assigned || 
+    if (!formData.title || !formData.class_assigned ||
         !formData.subject || !formData.due_date) {
       toast({
         title: "Missing Information",
@@ -249,21 +255,36 @@ const HomeworkTab: React.FC = () => {
       return;
     }
 
+    if (!formData.description && !formData.image) {
+      toast({
+        title: "Missing Content",
+        description: "Please provide either description or upload an image",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
       
-      const homeworkData = {
-        ...formData,
-        due_date: formData.due_date?.toISOString(),
-      };
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('class_assigned', formData.class_assigned);
+      formDataToSend.append('subject', formData.subject);
+      formDataToSend.append('due_date', formData.due_date?.toISOString() || '');
+      formDataToSend.append('estimated_duration', formData.estimated_duration.toString());
+      formDataToSend.append('priority', formData.priority);
+      formDataToSend.append('instructions', formData.instructions);
+      
+      if (formData.image) {
+        formDataToSend.append('image', formData.image);
+      }
 
       const response = await fetch('http://localhost:8000/api/homeworks/', {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(homeworkData),
+        body: formDataToSend,
       });
 
       if (response.ok) {
@@ -276,6 +297,7 @@ const HomeworkTab: React.FC = () => {
         setFormData({
           title: '',
           description: '',
+          image: null,
           class_assigned: '',
           subject: '',
           due_date: undefined,
@@ -531,6 +553,17 @@ const HomeworkTab: React.FC = () => {
                     
                     <p className="text-gray-700 mb-3">{homework.description}</p>
                     
+                    {homework.image_url && (
+                      <div className="mb-3">
+                        <img 
+                          src={homework.image_url} 
+                          alt="Homework" 
+                          className="max-w-full h-auto rounded-lg border"
+                          style={{ maxHeight: '200px' }}
+                        />
+                      </div>
+                    )}
+                    
                     <div className="text-xs text-gray-500">
                       Assigned by: {homework.teacher.user.first_name} {homework.teacher.user.last_name}
                       {homework.is_overdue && (
@@ -642,7 +675,8 @@ const HomeworkTab: React.FC = () => {
                   <SelectContent className="rounded-xl">
                     {classes.map(cls => (
                       <SelectItem key={cls.id} value={cls.id}>
-                        {cls.name} ({cls.homework_count} existing homework)
+                        {cls.name} ({cls.homework_count_today}/{cls.homework_limit} today)
+                        {!cls.can_assign_more && <span className="text-red-500"> - LIMIT REACHED</span>}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -704,15 +738,47 @@ const HomeworkTab: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Description *</Label>
-              <Textarea
-                placeholder="Describe the homework assignment..."
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                rows={3}
-                className="rounded-xl border-gray-200 resize-none"
-                required
-              />
+              <Label className="text-sm font-medium text-gray-700">Content *</Label>
+              <div className="space-y-3">
+                <Textarea
+                  placeholder="Describe the homework assignment... (optional if image is provided)"
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                  className="rounded-xl border-gray-200 resize-none"
+                />
+                
+                <div className="text-center text-sm text-gray-500">OR</div>
+                
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setFormData(prev => ({ ...prev, image: file }));
+                    }}
+                    className="hidden"
+                    id="homework-image"
+                  />
+                  <label htmlFor="homework-image" className="cursor-pointer">
+                    <div className="space-y-2">
+                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto">
+                        <Plus className="h-6 w-6 text-gray-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Upload homework image</p>
+                        <p className="text-xs text-gray-500">PNG, JPG up to 10MB</p>
+                      </div>
+                    </div>
+                  </label>
+                  {formData.image && (
+                    <div className="mt-3 text-sm text-green-600">
+                      ✓ {formData.image.name}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
