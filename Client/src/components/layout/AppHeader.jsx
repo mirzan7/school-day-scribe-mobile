@@ -1,12 +1,7 @@
-
 import React from 'react';
 import { GraduationCap } from 'lucide-react';
 
-interface AppHeaderProps {
-  title: string;
-}
-
-const AppHeader: React.FC<AppHeaderProps> = ({ title }) => {
+const AppHeader = ({ title }) => {
   return (
     <header className="apple-glass sticky top-0 z-50 border-b border-white/20">
       <div className="flex items-center px-6 py-4">
