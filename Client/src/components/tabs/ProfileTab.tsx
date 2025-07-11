@@ -40,7 +40,7 @@ const ProfileTab = () => {
 
   const handleChangeAvatar = () => {
     toast({
-      title: "Backend Required", 
+      title: "Backend Required",
       description: "Connect to Supabase to enable avatar uploads and file storage",
       variant: "destructive"
     });
@@ -48,7 +48,7 @@ const ProfileTab = () => {
 
   const handleAddTeacher = (e) => {
     e.preventDefault();
-    
+
     if (!teacherForm.name || !teacherForm.email || !teacherForm.teacherId || !teacherForm.department) {
       toast({
         title: "Missing Information",
@@ -170,7 +170,7 @@ const ProfileTab = () => {
             Change Password
           </Button>
           <Button
-            variant="outline" 
+            variant="outline"
             className="w-full justify-start"
             onClick={handleChangeAvatar}
           >
@@ -245,7 +245,7 @@ const ProfileTab = () => {
                     className="rounded-xl border-gray-200 h-12"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Email</Label>
                   <Input
@@ -256,7 +256,7 @@ const ProfileTab = () => {
                     className="rounded-xl border-gray-200 h-12"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Teacher ID</Label>
                   <Input
@@ -266,7 +266,7 @@ const ProfileTab = () => {
                     className="rounded-xl border-gray-200 h-12"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Department</Label>
                   <Select value={teacherForm.department} onValueChange={(value) => setTeacherForm(prev => ({ ...prev, department: value }))}>
@@ -286,7 +286,7 @@ const ProfileTab = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Role</Label>
                   <Select value={teacherForm.role} onValueChange={(value) => setTeacherForm(prev => ({ ...prev, role: value }))}>
@@ -301,18 +301,18 @@ const ProfileTab = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="flex space-x-3 pt-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsAddTeacherOpen(false)} 
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsAddTeacherOpen(false)}
                     className="flex-1 rounded-xl border-gray-200 h-12"
                   >
                     Cancel
                   </Button>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="flex-1 theme-primary rounded-xl h-12 font-medium"
                   >
                     Add Teacher
@@ -375,7 +375,7 @@ const ProfileTab = () => {
 
       <Card className="border-destructive/20 shadow-sm">
         <CardContent className="p-4">
-          <Button 
+          <Button
             onClick={handleLogout}
             variant="destructive"
             className="w-full flex items-center justify-center"
