@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+// import { useAuth } from '@/contexts/AuthContext';
 import { useActivity } from '@/contexts/ActivityContext';
+import { useAuth } from '../../hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,7 @@ import { User, Mail, LogOut, GraduationCap, BookOpen, Lock, Camera, Settings, Pl
 import { toast } from '@/hooks/use-toast';
 
 const ProfileTab = () => {
-  const { user, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const { addTeacher, getAllTeachers } = useActivity();
   const [isAddTeacherOpen, setIsAddTeacherOpen] = useState(false);
   const [teacherForm, setTeacherForm] = useState({
@@ -23,7 +24,8 @@ const ProfileTab = () => {
     department: '',
     role: 'teacher'
   });
-
+  console.log(user);
+  
   const allTeachers = getAllTeachers();
 
   const handleLogout = () => {
@@ -103,7 +105,7 @@ const ProfileTab = () => {
 
   if (!user) return null;
 
-  const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const initials = "";
 
   return (
     <div className="p-4 space-y-6 pb-32">
