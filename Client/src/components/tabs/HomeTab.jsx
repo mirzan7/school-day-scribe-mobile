@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-// import { useActivity } from '@/contexts/ActivityContext';
-// import { useAuth } from '@/contexts/AuthContext';
+import { useActivity } from '@/contexts/ActivityContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,8 +15,8 @@ import { Plus, Clock, BookOpen, Calendar as CalendarIcon, ChevronRight, CheckCir
 import { format } from 'date-fns';
 
 const HomeTab = () => {
-  // const { addActivity, getActivitiesByDate, getAllClasses, getAllSubjects, addCustomClass, addCustomSubject, getPendingActivities, approveActivity, rejectActivity, getAllTeachers } = useActivity();
-  // const { user } = useAuth();
+  const { addActivity, getActivitiesByDate, getAllClasses, getAllSubjects, addCustomClass, addCustomSubject, getPendingActivities, approveActivity, rejectActivity, getAllTeachers } = useActivity();
+  const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [isCustomClass, setIsCustomClass] = useState(false);
