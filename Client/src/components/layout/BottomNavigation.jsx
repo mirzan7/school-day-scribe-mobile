@@ -24,10 +24,14 @@ const BottomNavigation = () => {
               }`
             }
           >
-            <Icon className={({ isActive }) => `h-6 w-6 ${isActive ? 'theme-text' : ''}`} />
-            <span className={({ isActive }) => `text-xs font-medium ${isActive ? 'theme-text' : ''}`}>
-              {label}
-            </span>
+            {({ isActive }) => (
+              <>
+                <Icon className={`h-6 w-6 ${isActive ? 'theme-text' : ''}`} />
+                <span className={`text-xs font-medium ${isActive ? 'theme-text' : ''}`}>
+                  {label}
+                </span>
+              </>
+            )}
           </NavLink>
         ))}
       </div>

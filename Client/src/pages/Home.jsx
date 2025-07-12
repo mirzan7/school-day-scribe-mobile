@@ -1,14 +1,14 @@
-import React from 'react'
-import HomeTab from "../components/tabs/HomeTab"
-import BottomNavigation from '../components/layout/BottomNavigation'
+import React from "react";
+import HomeTab from "../components/tabs/HomeTab";
+import BottomNavigation from "../components/layout/BottomNavigation";
 
 const Home = () => {
-  return (
-    <>
-    <HomeTab/>
-    <BottomNavigation/>
-    </>
-  )
-}
+    return (
+        <>
+            <HomeTab />
+            <BottomNavigation />
+        </>
+    );
+};
 
-export default Home
+export default Home;

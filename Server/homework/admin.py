@@ -6,7 +6,7 @@ from django.http import HttpResponse
 import pandas as pd
 import io
 from django.contrib.auth.models import User
-from .models import Class, Subject, Teacher, Homework, HomeworkNotification, BulkTeacherUpload
+from .models import Class, Subject, Teacher, Homework, HomeworkNotification, BulkTeacherUpload, TeacherReport
 
 @admin.register(Class)
 class ClassAdmin(admin.ModelAdmin):
@@ -189,3 +189,5 @@ class BulkTeacherUploadAdmin(admin.ModelAdmin):
     
     def has_add_permission(self, request):
         return False
+    
+admin.site.register(TeacherReport)

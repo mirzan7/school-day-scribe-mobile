@@ -43,10 +43,10 @@ const LoginScreen = () => {
                 dispatch(
                     loginSuccess({
                         accessToken:
-                            response.data.access_token ||
+                            response.data.access ||
                             response.data.accessToken,
                         refreshToken:
-                            response.data.refresh_token ||
+                            response.data.refresh ||
                             response.data.refreshToken,
                         user: response.data.user || response.data.userData,
                     })

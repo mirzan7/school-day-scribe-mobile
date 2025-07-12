@@ -32,14 +32,14 @@ const MainRouter = () => {
                     </PrivateRouter>
                 }
             />
-            {/* <Route
+            <Route
                 path="/profile/"
                 element={
-                    // <PrivateRouter>
-                    //     <ProfileTab/>
-                    // </PrivateRouter>
+                    <PrivateRouter>
+                        <ProfileTab/>
+                    </PrivateRouter>
                 }
-                /> */}
+                />
 
             {/* Catch-all for any other path */}
             <Route path="*" element={<NotFound />} />

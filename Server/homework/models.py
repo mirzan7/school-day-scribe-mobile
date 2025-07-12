@@ -46,7 +46,7 @@ class Teacher(models.Model):
         ('principal', 'Principal'),
     ]
     
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='teacher_profile')
     teacher_id = models.CharField(max_length=20, unique=True)
     department = models.CharField(max_length=100)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='teacher')
@@ -166,6 +166,7 @@ class BulkTeacherUpload(models.Model):
 class TeacherReport(BaseModel):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE)
     period = models.IntegerField(max_length=20)
     activity = models.TextField(blank=True)
     homework = models.ForeignKey(Homework, on_delete=models.SET_NULL, null=True, blank=True)
