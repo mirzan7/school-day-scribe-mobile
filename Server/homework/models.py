@@ -1,5 +1,5 @@
 from django.db import models
-from api.models import User
+from api.models import User,BaseModel
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 
@@ -55,6 +55,7 @@ class Teacher(models.Model):
     
     def __str__(self):
         return f"{self.user.get_full_name()} ({self.teacher_id})"
+    
 
 def homework_image_upload_path(instance, filename):
     """Generate upload path for homework images"""
@@ -161,3 +162,11 @@ class BulkTeacherUpload(models.Model):
     
     def __str__(self):
         return f"Bulk upload by {self.uploaded_by.username} - {self.created_at}"
+    
+class TeacherReport(BaseModel):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    period = models.IntegerField(max_length=20)
+    activity = models.TextField(blank=True)
+    homework = models.ForeignKey(Homework, on_delete=models.SET_NULL, null=True, blank=True)
+    approved = models.BooleanField(default=False)

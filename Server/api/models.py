@@ -5,7 +5,7 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 import uuid
-
+# from homework.models import Class,Teacher,
 
 # BaseModel with UUID and timestamps
 class BaseModel(models.Model):
@@ -54,3 +54,9 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.username} ({self.role})"
+    
+    def get_full_name(self):
+        return f"{self.username}"  
+
+
+# class AddTeacher(API)

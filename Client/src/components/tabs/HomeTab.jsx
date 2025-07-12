@@ -40,6 +40,11 @@ const HomeTab = () => {
     homeworkDescription: ''
   });
 
+  const fetchData = async() =>{
+
+  }
+
+
   const periods = Array.from({ length: 8 }, (_, i) => i + 1);
   const dateString = format(new Date(), 'yyyy-MM-dd');
   const todayActivities = getActivitiesByDate(dateString);
@@ -49,18 +54,18 @@ const HomeTab = () => {
   const pendingActivities = getPendingActivities();
 
   // Effect to check for existing homework when a class is selected
-  useEffect(() => {
-    if (formData.class && todayActivities) {
-      const homeworkForClass = todayActivities.filter(activity =>
-        activity.class === formData.class &&
-        activity.hasHomework &&
-        activity.period !== selectedPeriod
-      );
-      setExistingHomework(homeworkForClass);
-    } else {
-      setExistingHomework([]);
-    }
-  }, [formData.class, todayActivities, selectedPeriod]);
+  // useEffect(() => {
+  //   if (formData.class && todayActivities) {
+  //     const homeworkForClass = todayActivities.filter(activity =>
+  //       activity.class === formData.class &&
+  //       activity.hasHomework &&
+  //       activity.period !== selectedPeriod
+  //     );
+  //     setExistingHomework(homeworkForClass);
+  //   } else {
+  //     setExistingHomework([]);
+  //   }
+  // }, [formData.class, todayActivities, selectedPeriod]);
 
 
   const resetFormState = () => {
