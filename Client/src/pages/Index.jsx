@@ -1,32 +1,32 @@
-import React from 'react';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import { ActivityProvider } from '@/contexts/ActivityContext';
-import LoginScreen from '@/components/auth/LoginScreen';
-import SplashScreen from '@/components/auth/SplashScreen';
-import MainApp from '@/components/MainApp';
+// import React from 'react';
+// import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+// import { ActivityProvider } from '@/contexts/ActivityContext';
+// import LoginScreen from '@/components/auth/LoginScreen';
+// import SplashScreen from '@/components/auth/SplashScreen';
+// import MainApp from '@/components/MainApp';
 
-const AppContent = () => {
-  const { user, isLoading } = useAuth();
+// const AppContent = () => {
+//   const { user, isLoading } = useAuth();
 
-  if (isLoading) {
-    return <SplashScreen />;
-  }
+//   if (isLoading) {
+//     return <SplashScreen />;
+//   }
 
-  if (!user) {
-    return <LoginScreen />;
-  }
+//   if (!user) {
+//     return <LoginScreen />;
+//   }
 
-  return <MainApp />;
-};
+//   return <MainApp />;
+// };
 
-const Index = () => {
-  return (
-    <AuthProvider>
-      <ActivityProvider>
-        <AppContent />
-      </ActivityProvider>
-    </AuthProvider>
-  );
-};
+// const Index = () => {
+//   return (
+//     <AuthProvider>
+//       <ActivityProvider>
+//         <AppContent />
+//       </ActivityProvider>
+//     </AuthProvider>
+//   );
+// };
 
-export default Index;
+// export default Index;

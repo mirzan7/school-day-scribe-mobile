@@ -1,7 +1,7 @@
 // utils/axios.js
 import axios from 'axios';
 
-const baseURL = 'http://localhost:8000/api'; // or your actual base URL
+const baseURL = 'http://127.0.0.1:8000/api'; // or your actual base URL
 
 const api = axios.create({
   baseURL,
@@ -46,3 +46,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+export {baseURL};
