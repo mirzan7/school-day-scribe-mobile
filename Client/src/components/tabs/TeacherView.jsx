@@ -98,9 +98,7 @@ const TeacherView = ({ addActivity }) => {
             description: report.activity,
             hasHomework: !!report.homework_title, 
             homeworkDescription: report.homework_title || "",
-            isApproved: report.approved,
-            isRejected: report.rejected || false,
-            sentForApproval: !report.approved && !(report.rejected || false),
+            status : report.status,
             approvedBy: report.approved ? "Principal" : null,
             rejectedBy: report.rejected ? "Principal" : null,
             inputType: "description",
@@ -117,18 +115,18 @@ const TeacherView = ({ addActivity }) => {
 
     const getStatusColor = (activity) => {
         if (!activity) return "bg-gray-50 border-gray-200";
-        if (activity.isApproved) return "theme-primary-light theme-border";
-        if (activity.isRejected) return "bg-red-50 border-red-200";
-        if (activity.sentForApproval) return "bg-amber-50 border-amber-200";
+        if (activity.status === "approved") return "theme-primary-light theme-border";
+        if (activity.status === "rejected") return "bg-red-50 border-red-200";
+        if (activity.status === "pending") return "bg-amber-50 border-amber-200";
         return "bg-blue-50 border-blue-200";
     };
 
     const getStatusIcon = (activity) => {
         if (!activity) return <Plus className="h-5 w-5 text-gray-400" />;
-        if (activity.isApproved)
+        if (activity.status === "approved")
             return <CheckCircle2 className="h-5 w-5 theme-text" />;
-        if (activity.isRejected) return <X className="h-5 w-5 text-red-600" />;
-        if (activity.sentForApproval)
+        if (activity.status === "rejected") return <X className="h-5 w-5 text-red-600" />;
+        if (activity.status === "pending")
             return <Send className="h-5 w-5 text-amber-600" />;
         return <Clock className="h-5 w-5 text-blue-600" />;
     };
@@ -337,7 +335,7 @@ const TeacherView = ({ addActivity }) => {
                                                 <h3 className="font-semibold text-gray-900">
                                                     Period {period}
                                                 </h3>
-                                                {activity?.isApproved && (
+                                                {activity?.status == "approved" && (
                                                     <div className="w-2 h-2 theme-primary rounded-full"></div>
                                                 )}
                                             </div>
