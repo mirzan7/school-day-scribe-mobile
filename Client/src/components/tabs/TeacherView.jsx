@@ -50,6 +50,10 @@ const TeacherView = ({ addActivity }) => {
     const [inputType, setInputType] = useState("description");
     const [photoFile, setPhotoFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    
+    // FIX: Add state to track the ID of the report being edited
+    const [editingReportId, setEditingReportId] = useState(null);
+
     const [formData, setFormData] = useState({
         class: "",
         subject: "",
@@ -85,8 +89,6 @@ const TeacherView = ({ addActivity }) => {
     const allSubjects = subjects.map((s) => s.name);
 
     const allActivities = reports.map((report) => {
-        // const classInfo = classes.find((c) => c.id === report.class_);
-        // const className = classInfo ? `${classInfo.name} - ${classInfo.section}` : "Unknown Class";
         return {
             id: report.id,
             date: format(new Date(report.created_at), "yyyy-MM-dd"),
@@ -94,8 +96,8 @@ const TeacherView = ({ addActivity }) => {
             class: report.class_assigned_name,
             subject: report.subject_name,
             description: report.activity,
-            hasHomework: !!report.homework,
-            homeworkDescription: report.homework || "",
+            hasHomework: !!report.homework_title, 
+            homeworkDescription: report.homework_title || "",
             isApproved: report.approved,
             isRejected: report.rejected || false,
             sentForApproval: !report.approved && !(report.rejected || false),
@@ -147,11 +149,17 @@ const TeacherView = ({ addActivity }) => {
         setPhotoFile(null);
         setImagePreview(null);
         setExistingHomework([]);
+        // FIX: Reset the editing ID
+        setEditingReportId(null); 
     };
 
     const handleAddActivity = (period) => {
         const existingActivity = getPeriodActivity(period);
+        resetFormState(); // Reset form state first
+
         if (existingActivity) {
+            // This is an existing activity, populate form and set editing ID
+            setEditingReportId(existingActivity.id); // FIX: Set the ID of the report to be edited
             setFormData({
                 class: existingActivity.class || "",
                 subject: existingActivity.subject || "",
@@ -161,16 +169,11 @@ const TeacherView = ({ addActivity }) => {
                 hasHomework: existingActivity.hasHomework || false,
                 homeworkDescription: existingActivity.homeworkDescription || "",
             });
-            // setInputType(existingActivity.photoURL ? "photo" : "description");
-            // setImagePreview(existingActivity.photoURL);
             setIsCustomClass(!allClasses.includes(existingActivity.class));
             setIsCustomSubject(!allSubjects.includes(existingActivity.subject));
-        } else {
-            try {
-                const data = {};
-                resetFormState();
-            } catch (error) {}
         }
+        // For new activities, editingReportId is already null from resetFormState
+        
         setSelectedPeriod(period);
         setIsDialogOpen(true);
     };
@@ -194,10 +197,10 @@ const TeacherView = ({ addActivity }) => {
             return;
         }
 
-        // Find the corresponding class and subject objects to get their IDs
         const classObj = classes.find((c) => c.name === finalClass);
         const subjectObj = subjects.find((s) => s.name === finalSubject);
 
+        // This validation can be removed if custom classes/subjects are allowed and created on the fly
         if (!classObj || !subjectObj) {
             toast({
                 title: "Invalid Selection",
@@ -212,78 +215,50 @@ const TeacherView = ({ addActivity }) => {
             class_assigned_id: classObj.id,
             subject_id: subjectObj.id,
             activity: formData.description.trim(),
+            // FIX: Changed from homework_description to match backend expectation
             homework_description: formData.hasHomework
                 ? formData.homeworkDescription.trim()
                 : null,
         };
 
         try {
-            const response = await api.post(
-                "/teacher-report/create/",
-                reportData
-            );
-
-            // Create new activity object from response data
-            const newActivity = {
-                id: response.data.id,
-                date: format(new Date(response.data.created_at), "yyyy-MM-dd"),
-                period: response.data.period,
-                class: response.data.class_assigned_name,
-                subject: response.data.subject_name,
-                description: response.data.activity,
-                hasHomework: !!response.data.homework_title,
-                homeworkDescription: response.data.homework_title || "",
-                isApproved: response.data.approved,
-                isRejected: false,
-                sentForApproval: !response.data.approved,
-                approvedBy: null,
-                rejectedBy: null,
-                inputType: "description",
-                photoURL: "",
-            };
-
-            // Update reports state with new data
-            setReports((prevReports) => {
-                const existingIndex = prevReports.findIndex(
-                    (report) =>
-                        report.period === response.data.period &&
-                        format(new Date(report.created_at), "yyyy-MM-dd") ===
-                            format(new Date(), "yyyy-MM-dd")
+            let response;
+            // FIX: Check if we are editing or creating a new report
+            if (editingReportId) {
+                // We are UPDATING an existing report
+                response = await api.put(
+                    `/teacher-report/${editingReportId}/`, // Use the PUT endpoint
+                    reportData
                 );
+                // Update the specific report in the state
+                setReports(prevReports => 
+                    prevReports.map(report => 
+                        report.id === editingReportId ? response.data : report
+                    )
+                );
+                toast({
+                    title: "Success",
+                    description: "Your report has been updated and sent for approval.",
+                });
 
-                if (existingIndex !== -1) {
-                    // Update existing report
-                    const updatedReports = [...prevReports];
-                    updatedReports[existingIndex] = {
-                        ...updatedReports[existingIndex],
-                        ...response.data,
-                        class_assigned_name: response.data.class_assigned_name,
-                        subject_name: response.data.subject_name,
-                    };
-                    return updatedReports;
-                } else {
-                    // Add new report
-                    return [
-                        ...prevReports,
-                        {
-                            ...response.data,
-                            class_assigned_name:
-                                response.data.class_assigned_name,
-                            subject_name: response.data.subject_name,
-                        },
-                    ];
-                }
-            });
-
-            toast({
-                title: "Success",
-                description: "Your report has been submitted for approval.",
-            });
+            } else {
+                // We are CREATING a new report
+                response = await api.post(
+                    "/teacher-report/create/", // Use the POST endpoint
+                    reportData
+                );
+                // Add the new report to the state
+                setReports(prevReports => [...prevReports, response.data]);
+                toast({
+                    title: "Success",
+                    description: "Your report has been submitted for approval.",
+                });
+            }
 
             setIsDialogOpen(false);
             resetFormState();
         } catch (error) {
-            console.error("Failed to create report:", error);
+            console.error("Failed to submit report:", error);
             toast({
                 title: "Error",
                 description:
@@ -293,7 +268,9 @@ const TeacherView = ({ addActivity }) => {
             });
         }
     };
-
+    
+    // The rest of your JSX remains the same.
+    // ... (paste your entire return statement here) ...
     return (
         <div className="p-6 space-y-6 pb-32 max-w-2xl mx-auto">
             {/* Header */}
@@ -423,9 +400,6 @@ const TeacherView = ({ addActivity }) => {
                                 <Label className="text-sm font-medium text-gray-700">
                                     Class & Section
                                 </Label>
-                                {/* <Button type="button" variant="ghost" size="sm" onClick={() => setIsCustomClass(!isCustomClass)} className="h-6 text-xs theme-text">
-                                    <PlusCircle className="h-3 w-3 mr-1" />{isCustomClass ? "Select from list" : "Add new"}
-                                </Button> */}
                             </div>
                             {isCustomClass ? (
                                 <Input
@@ -472,9 +446,6 @@ const TeacherView = ({ addActivity }) => {
                                 <Label className="text-sm font-medium text-gray-700">
                                     Subject
                                 </Label>
-                                {/* <Button type="button" variant="ghost" size="sm" onClick={() => setIsCustomSubject(!isCustomSubject)} className="h-6 text-xs theme-text">
-                                    <PlusCircle className="h-3 w-3 mr-1" />{isCustomSubject ? "Select from list" : "Add new"}
-                                </Button> */}
                             </div>
                             {isCustomSubject ? (
                                 <Input

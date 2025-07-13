@@ -7,16 +7,23 @@ from homework.models import Teacher, TeacherReport
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
-        data.update(
-            {
-                "user": {
-                    "id": str(self.user.id),
-                    "username": self.user.username,
-                    "role": self.user.role,
-                    "must_change_password": self.user.must_change_password,
-                }
-            }
-        )
+        
+        user_data = {
+            "id": str(self.user.id),
+            "username": self.user.username,
+            "role": self.user.role,
+            "must_change_password": self.user.must_change_password,
+        }
+        
+        if self.user.role == "teacher":
+            teacher_id = self.user.teacher_profile.teacher_id
+            department = self.user.teacher_profile.department
+            user_data.update({
+                "teacher_id": teacher_id,
+                "department": department
+            })
+        
+        data.update({"user": user_data})
         return data
 
 
@@ -52,8 +59,9 @@ class TeacherReportSerializer(serializers.ModelSerializer):
     )
     teacher_name = serializers.CharField(source="teacher.user.username", read_only=True)
     homework_title = serializers.CharField(
-        source="homework.title", read_only=True, allow_null=True
+        source="homework.description", read_only=True, allow_null=True
     )
+    
 
     class Meta:
         model = TeacherReport

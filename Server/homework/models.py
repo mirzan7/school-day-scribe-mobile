@@ -167,7 +167,7 @@ class TeacherReport(BaseModel):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE)
-    period = models.IntegerField(max_length=20)
+    period = models.IntegerField()
     activity = models.TextField(blank=True)
     homework = models.ForeignKey(Homework, on_delete=models.SET_NULL, null=True, blank=True)
     approved = models.BooleanField(default=False)

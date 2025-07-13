@@ -1,10 +1,11 @@
 import { Routes, Route } from "react-router-dom";
 import NotFound from "../pages/NotFound";
 import LoginScreen from "../components/auth/LoginScreen";
-import PrivateRouter from "./PrivateRouter"; // Ensure this is correctly implemented
-import PublicRouter from "./PublicRouter";   // Ensure this is correctly implemented
+import PrivateRouter from "./PrivateRouter";
+import PublicRouter from "./PublicRouter";   
 import Home from "../pages/Home";
-import ProfileTab from "../components/tabs/ProfileTab"
+
+import Profile from "../pages/Profile";
 
 const MainRouter = () => {
     return (
@@ -36,7 +37,7 @@ const MainRouter = () => {
                 path="/profile/"
                 element={
                     <PrivateRouter>
-                        <ProfileTab/>
+                        <Profile/>
                     </PrivateRouter>
                 }
                 />
