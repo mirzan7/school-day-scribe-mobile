@@ -14,13 +14,11 @@ export const ActivityProvider = ({ children }) => {
   const [activities, setActivities] = useState([]);
   const [customClasses, setCustomClasses] = useState([]);
   const [customSubjects, setCustomSubjects] = useState([]);
-  const [teachers, setTeachers] = useState([]);
 
   useEffect(() => {
     const saved = localStorage.getItem('schoolActivities');
     const savedClasses = localStorage.getItem('customClasses');
     const savedSubjects = localStorage.getItem('customSubjects');
-    const savedTeachers = localStorage.getItem('schoolTeachers');
     
     if (saved) {
       setActivities(JSON.parse(saved));
@@ -30,38 +28,6 @@ export const ActivityProvider = ({ children }) => {
     }
     if (savedSubjects) {
       setCustomSubjects(JSON.parse(savedSubjects));
-    }
-    if (savedTeachers) {
-      setTeachers(JSON.parse(savedTeachers));
-    } else {
-      // Initialize with default teachers
-      const defaultTeachers = [
-        {
-          id: 'teacher-1',
-          name: 'John Teacher',
-          email: 'teacher@school.edu',
-          teacherId: 'T001',
-          department: 'General Education',
-          role: 'teacher'
-        },
-        {
-          id: 'teacher-2',
-          name: 'Sarah Mathematics',
-          email: 'sarah.math@school.edu',
-          teacherId: 'T002',
-          department: 'Mathematics',
-          role: 'teacher'
-        },
-        {
-          id: 'teacher-3',
-          name: 'Mike Science',
-          email: 'mike.science@school.edu',
-          teacherId: 'T003',
-          department: 'Science',
-          role: 'teacher'
-        }
-      ];
-      setTeachers(defaultTeachers);
     }
   }, []);
 
@@ -76,10 +42,6 @@ export const ActivityProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('customSubjects', JSON.stringify(customSubjects));
   }, [customSubjects]);
-
-  useEffect(() => {
-    localStorage.setItem('schoolTeachers', JSON.stringify(teachers));
-  }, [teachers]);
 
   const addActivity = (activity) => {
     const newActivity = {
@@ -148,14 +110,6 @@ export const ActivityProvider = ({ children }) => {
     }
   };
 
-  const addTeacher = (teacher) => {
-    const newTeacher = {
-      ...teacher,
-      id: `teacher-${Date.now()}`,
-    };
-    setTeachers(prev => [...prev, newTeacher]);
-  };
-
   const getActivitiesByDate = (date) => {
     return activities.filter(activity => activity.date === date);
   };
@@ -183,30 +137,23 @@ export const ActivityProvider = ({ children }) => {
     return [...defaultSubjects, ...customSubjects];
   };
 
-  const getAllTeachers = () => {
-    return teachers;
-  };
-
   return (
     <ActivityContext.Provider value={{
       activities,
       customClasses,
       customSubjects,
-      teachers,
       addActivity,
       updateActivity,
       approveActivity,
       rejectActivity,
       addCustomClass,
       addCustomSubject,
-      addTeacher,
       getActivitiesByDate,
       getActivitiesByTeacher,
       getActiveDate,
       getPendingActivities,
       getAllClasses,
-      getAllSubjects,
-      getAllTeachers
+      getAllSubjects
     }}>
       {children}
     </ActivityContext.Provider>

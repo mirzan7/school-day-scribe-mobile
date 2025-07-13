@@ -35,10 +35,10 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Teacher
-        fields = ['user', 'teacher_id', 'department', 'role', 'phone']
+        fields = ["user", "teacher_id", "department", "role", "phone"]
 
     def create(self, validated_data):
-        user_data = validated_data.pop('user')
+        user_data = validated_data.pop("user")
         user = UserSerializer().create(user_data)
         teacher = Teacher.objects.create(user=user, **validated_data)
         return teacher
@@ -46,42 +46,51 @@ class TeacherSerializer(serializers.ModelSerializer):
 
 class TeacherReportSerializer(serializers.ModelSerializer):
     # --- Read-only fields for displaying names ---
-    subject_name = serializers.CharField(source='subject.name', read_only=True)
-    class_assigned_name = serializers.CharField(source='class_assigned.name', read_only=True)
-    teacher_name = serializers.CharField(source='teacher.user.username', read_only=True)
-    homework_title = serializers.CharField(source='homework.title', read_only=True, allow_null=True)
+    subject_name = serializers.CharField(source="subject.name", read_only=True)
+    class_assigned_name = serializers.CharField(
+        source="class_assigned.name", read_only=True
+    )
+    teacher_name = serializers.CharField(source="teacher.user.username", read_only=True)
+    homework_title = serializers.CharField(
+        source="homework.title", read_only=True, allow_null=True
+    )
 
     class Meta:
         model = TeacherReport
         fields = [
-            'id',
-            'period',
-            'activity',
-            'approved',
-            'created_at',
-            
+            "id",
+            "period",
+            "activity",
+            "approved",
+            "created_at",
             # --- Fields for Reading (Display) ---
-            'teacher_name',
-            'subject_name',
-            'class_assigned_name',
-            'homework_title',
-
+            "teacher_name",
+            "subject_name",
+            "class_assigned_name",
+            "homework_title",
             # --- Fields for Writing (Creating/Updating) ---
-            'teacher',
-            'subject',
-            'class_assigned',
-            'homework',
+            "teacher",
+            "subject",
+            "class_assigned",
+            "homework",
         ]
-        
+
         # The 'teacher' field is set in the view, not by the user directly
-        read_only_fields = ['id', 'approved', 'created_at', 'teacher']
+        read_only_fields = ["id", "approved", "created_at", "teacher"]
 
         # Specify that 'subject', 'class_assigned', and 'homework' are write-only.
         # They will accept an ID but will not be part of the API output.
         # The read-only name fields above will be used in the output instead.
         extra_kwargs = {
-            'subject': {'write_only': True},
-            'class_assigned': {'write_only': True},
-            'homework': {'write_only': True, 'required': False, 'allow_null': True}
+            "subject": {"write_only": True},
+            "class_assigned": {"write_only": True},
+            "homework": {"write_only": True, "required": False, "allow_null": True},
         }
 
+
+class TeacherProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+
+    class Meta:
+        model = Teacher
+        fields = ["user", "teacher_id", "department", "role", "phone", "created_at"]

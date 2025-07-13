@@ -1,8 +1,10 @@
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from homework.models import Class, Homework, Subject,TeacherReport
+from .models import User
+from homework.models import Class, Homework, Subject, Teacher,TeacherReport
 from .serializers import (
     CustomTokenObtainPairSerializer,
+    TeacherProfileSerializer,
     TeacherReportSerializer,
     TeacherSerializer,
 )
@@ -21,11 +23,61 @@ class AddTeacher(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = TeacherSerializer(data=request.data)
-        if serializer.is_valid():
-            teacher = serializer.save()
-            return Response(TeacherSerializer(teacher).data, status=201)
-        return Response(serializer.errors, status=400)
+        try:
+            # Extract data from request
+            name = request.data.get('name')
+            teacher_id = request.data.get('teacherId')
+            department = request.data.get('department')
+            role = request.data.get('role', 'teacher')
+            phone = request.data.get('phone', '')
+
+            # Validate required fields
+            if not all([name, teacher_id, department]):
+                return Response(
+                    {"error": "Name, teacher ID, and department are required"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Check if teacher_id already exists
+            if Teacher.objects.filter(teacher_id=teacher_id).exists():
+                return Response(
+                    {"error": "Teacher ID already exists"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Check if username already exists
+            if User.objects.filter(username=name).exists():
+                return Response(
+                    {"error": "Username already exists"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Transform data for nested serializer
+            teacher_data = {
+                "user": {
+                    "username": name,
+                    "role": "teacher"  # Set role as teacher for User model
+                },
+                "teacher_id": teacher_id,
+                "department": department,
+                "role": role,  # This is the teacher role (teacher, senior_teacher, etc.)
+                "phone": phone
+            }
+
+            # Create teacher using serializer
+            with transaction.atomic():
+                serializer = TeacherSerializer(data=teacher_data)
+                if serializer.is_valid():
+                    teacher = serializer.save()
+                    return Response(TeacherSerializer(teacher).data, status=status.HTTP_201_CREATED)
+                else:
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response(
+                {"error": f"An error occurred: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class ChangePassword(APIView):
@@ -174,3 +226,31 @@ class CreateTeacherReport(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
+        
+class ProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        try:
+            role = user.role.lower()
+        except AttributeError:
+            return Response(
+                {"error": "User role not found."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if role == "principal":
+            teachers = Teacher.objects.all()
+            serializer = TeacherProfileSerializer(teachers, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            try:
+                teacher = user.teacher_profile
+                serializer = TeacherProfileSerializer(teacher)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Teacher.DoesNotExist:
+                return Response(
+                    {"error": "Teacher profile not found for this user."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
