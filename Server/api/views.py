@@ -336,3 +336,16 @@ class ProfileView(APIView):
                     {"error": "Teacher profile not found for this user."},
                     status=status.HTTP_404_NOT_FOUND,
                 )
+
+class CustomTeacherReportView(APIView):
+    def get(self, request):
+        try:
+            
+            date = datetime.strptime(request.query_params.get('date'), '%Y-%m-%d').date() 
+        except ValueError:
+            return Response({'error': 'Invalid date format'}, status=400)
+
+        reports = TeacherReport.objects.filter(created_at__date=date)
+        serializer = TeacherReportSerializer(reports, many=True)
+        print(serializer.data)
+        return Response(serializer.data)

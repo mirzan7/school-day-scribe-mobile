@@ -4,6 +4,7 @@ import LoginScreen from "../components/auth/LoginScreen";
 import PrivateRouter from "./PrivateRouter";
 import PublicRouter from "./PublicRouter";   
 import Home from "../pages/Home";
+import  ReportTab from "../components/tabs/ReportTab";
 
 import Profile from "../pages/Profile";
 
@@ -43,6 +44,8 @@ const MainRouter = () => {
                 />
 
             {/* Catch-all for any other path */}
+
+            <Route path="/report" element={<PrivateRouter><ReportTab /></PrivateRouter>} />
             <Route path="*" element={<NotFound />} />
         </Routes>
     );
