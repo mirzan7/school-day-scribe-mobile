@@ -4,6 +4,8 @@ from .models import User
 from homework.models import Class, Homework, Subject, Teacher, TeacherReport
 from .serializers import (
     CustomTokenObtainPairSerializer,
+    PendingApprovalSerializer,
+    TeacherOverviewSerializer,
     TeacherProfileSerializer,
     TeacherReportSerializer,
     TeacherSerializer,
@@ -11,6 +13,7 @@ from .serializers import (
 
 # import transaction
 from django.db import transaction
+from django.db.models import Q,Count
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -295,7 +298,7 @@ class TeacherReportView(APIView):
                 report.subject = subject
                 report.class_assigned = class_assigned
                 report.activity = data.get("activity", report.activity)
-                report.approved = False # Reset approval status
+                report.status = "pending" # Reset approval status
                 report.save()
 
                 response_serializer = TeacherReportSerializer(report)
@@ -328,7 +331,7 @@ class ProfileView(APIView):
         else:
             try:
                 class_taught = TeacherReport.objects.filter(
-                    teacher=user.teacher_profile, approved=True
+                    teacher=user.teacher_profile, status = "approved"
                 ).count()
                 return Response({"count": class_taught}, status=status.HTTP_200_OK)
             except Teacher.DoesNotExist:
@@ -349,3 +352,161 @@ class CustomTeacherReportView(APIView):
         serializer = TeacherReportSerializer(reports, many=True)
         print(serializer.data)
         return Response(serializer.data)
+    
+    
+class UnifiedDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """
+        Get dashboard data based on query parameters.
+        
+        Query Parameters:
+        - section: 'pending', 'teachers', 'stats', or 'all' (default: 'all')
+        - limit: number of records to return (default: 10 for pending approvals)
+        """
+        try:
+            section = request.query_params.get('section', 'all').lower()
+            limit = int(request.query_params.get('limit', 10))
+            
+            response_data = {}
+            
+            # Get pending approvals
+            if section in ['pending', 'all']:
+                pending_approvals = TeacherReport.objects.filter(
+                    status='pending'
+                ).select_related(
+                    'teacher__user', 'subject', 'class_assigned'
+                ).order_by('-created_at')[:limit]
+                
+                response_data['pending_approvals'] = PendingApprovalSerializer(
+                    pending_approvals, many=True
+                ).data
+                
+                if section == 'pending':
+                    response_data['count'] = TeacherReport.objects.filter(
+                        status='pending'
+                    ).count()
+            
+            # Get teachers overview
+            if section in ['teachers', 'all']:
+                teachers_overview = Teacher.objects.select_related('user').annotate(
+                    pending_count=Count('teacherreport', filter=Q(teacherreport__status='pending'))
+                ).order_by('user__username')
+                
+                response_data['teachers_overview'] = TeacherOverviewSerializer(
+                    teachers_overview, many=True
+                ).data
+                
+                if section == 'teachers':
+                    response_data['total_count'] = teachers_overview.count()
+            
+            # Get statistics
+            if section in ['stats', 'all']:
+                today = timezone.now().date()
+                
+                stats = {
+                    'total_teachers': Teacher.objects.count(),
+                    'pending_approvals': TeacherReport.objects.filter(status='pending').count(),
+                    'today_reports': TeacherReport.objects.filter(created_at__date=today).count()
+                }
+                
+                response_data['stats'] = stats
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+            
+        except ValueError:
+            return Response(
+                {'error': 'Invalid limit parameter. Must be a number.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            print(e)
+            return Response(
+                {'error': 'Failed to fetch dashboard data', 'details': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def post(self, request):
+        """
+        Handle actions like approve/reject reports.
+        
+        Request body:
+        {
+            "action": "approve" or "reject",
+            "report_id": 1
+        }
+        """
+        try:
+            action = request.data.get('action')
+            report_id = request.data.get('report_id')
+            
+            if not action or not report_id:
+                return Response(
+                    {'error': 'Both action and report_id are required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if action not in ['approve', 'reject']:
+                return Response(
+                    {'error': 'Invalid action. Use "approve" or "reject"'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get and update report
+            report = TeacherReport.objects.get(id=report_id)
+            
+            if action == 'approve':
+                report.status = 'approved'
+            else:
+                report.status = 'rejected'
+            
+            report.save()
+            
+            # Return updated dashboard data
+            return Response({
+                'message': f'Report {action}d successfully',
+                'report_id': report_id,
+                'new_status': report.status,
+                'dashboard_data': self.get_dashboard_data()
+            }, status=status.HTTP_200_OK)
+            
+        except TeacherReport.DoesNotExist:
+            return Response(
+                {'error': 'Report not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to update report status', 'details': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def get_dashboard_data(self):
+        """Helper method to get fresh dashboard data after actions"""
+        try:
+            # Get fresh data
+            pending_approvals = TeacherReport.objects.filter(
+                status='pending'
+            ).select_related(
+                'teacher__user', 'subject', 'class_assigned'
+            ).order_by('-created_at')[:10]
+            
+            teachers_overview = Teacher.objects.select_related('user').annotate(
+                pending_count=Count('teacherreport', filter=Q(teacherreport__status='pending'))
+            ).order_by('user__username')
+            
+            today = timezone.now().date()
+            stats = {
+                'total_teachers': Teacher.objects.count(),
+                'pending_approvals': TeacherReport.objects.filter(status='pending').count(),
+                'today_reports': TeacherReport.objects.filter(created_at__date=today).count()
+            }
+            
+            return {
+                'pending_approvals': PendingApprovalSerializer(pending_approvals, many=True).data,
+                'teachers_overview': TeacherOverviewSerializer(teachers_overview, many=True).data,
+                'stats': stats
+            }
+        except Exception:
+            return {}

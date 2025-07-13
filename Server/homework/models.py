@@ -170,4 +170,8 @@ class TeacherReport(BaseModel):
     period = models.IntegerField()
     activity = models.TextField(blank=True)
     homework = models.ForeignKey(Homework, on_delete=models.SET_NULL, null=True, blank=True)
-    approved = models.BooleanField(default=False)
+    status = models.CharField(max_length=10, choices=[
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected')
+    ], default='pending')

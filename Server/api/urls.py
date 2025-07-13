@@ -9,6 +9,7 @@ from .views import (
     LoginView,
     GetTeacherReport,
     ProfileView,
+    UnifiedDashboardView,
 )
 
 urlpatterns = [
@@ -26,4 +27,5 @@ urlpatterns = [
     path("profile/", ProfileView.as_view()),
     path("create/teacher/", AddTeacher.as_view()),
     path("teacher-reports/", CustomTeacherReportView.as_view()),
+    path('dashboard/', UnifiedDashboardView.as_view(), name='dashboard'),
 ]

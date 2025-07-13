@@ -2,11 +2,11 @@ import { Routes, Route } from "react-router-dom";
 import NotFound from "../pages/NotFound";
 import LoginScreen from "../components/auth/LoginScreen";
 import PrivateRouter from "./PrivateRouter";
-import PublicRouter from "./PublicRouter";   
+import PublicRouter from "./PublicRouter";
 import Home from "../pages/Home";
-import  ReportTab from "../components/tabs/ReportTab";
 
 import Profile from "../pages/Profile";
+import Report from "../pages/Report";
 
 const MainRouter = () => {
     return (
@@ -38,17 +38,24 @@ const MainRouter = () => {
                 path="/profile/"
                 element={
                     <PrivateRouter>
-                        <Profile/>
+                        <Profile />
                     </PrivateRouter>
                 }
-                />
+            />
 
             {/* Catch-all for any other path */}
 
-            <Route path="/report" element={<PrivateRouter><ReportTab /></PrivateRouter>} />
+            <Route
+                path="/report"
+                element={
+                    <PrivateRouter>
+                        <Report />
+                    </PrivateRouter>
+                }
+            />
             <Route path="*" element={<NotFound />} />
         </Routes>
     );
 };
 
-export default MainRouter;
+export default MainRouter;
