@@ -1,4 +1,5 @@
 import { Provider } from 'react-redux';
+import { Toaster } from "sonner";
 import { BrowserRouter } from "react-router-dom";
 import store from './redux/store';
 import MainRouter from './router/MainRouter';
@@ -12,6 +13,7 @@ const App = () => (
       <ActivityProvider>
         <BrowserRouter>
           <MainRouter />
+          <Toaster richColors position="top-right" />
         </BrowserRouter>
       </ActivityProvider>
     </AuthProvider>

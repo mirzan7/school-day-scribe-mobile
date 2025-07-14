@@ -100,11 +100,12 @@ class ChangePassword(APIView):
 
     def post(self, request):
         user = request.user
-        new_password = request.data.get("password")
+        new_password = request.data.get("new_password")
         if not new_password:
             return Response({"error": "Password is required."}, status=400)
         user.set_password(new_password)
         user.save()
+        return Response({"message": "Password changed successfully."}, status=200)
 
 
 class GetTeacherReport(APIView):

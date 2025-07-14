@@ -30,8 +30,20 @@ const authSlice = createSlice({
       state.user = null;
       localStorage.clear();
     },
+    passwordChanged(state) {
+      if (state.user) {
+        // Create a new user object with the updated flag
+        const updatedUser = { ...state.user, must_change_password: false };
+        
+        // Update the state
+        state.user = updatedUser;
+        
+        // Persist the change to localStorage
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+    },
   },
 });
 
-export const { loginSuccess, updateAccessToken, logout } = authSlice.actions;
+export const { loginSuccess, updateAccessToken, logout, passwordChanged } = authSlice.actions;
 export default authSlice.reducer;

@@ -7,6 +7,7 @@ import Home from "../pages/Home";
 
 import Profile from "../pages/Profile";
 import Report from "../pages/Report";
+import ChangePasswordScreen from "../pages/ChangePassword";
 
 const MainRouter = () => {
     return (
@@ -50,6 +51,14 @@ const MainRouter = () => {
                 element={
                     <PrivateRouter>
                         <Report />
+                    </PrivateRouter>
+                }
+            />
+            <Route
+                path="/change-password"
+                element={
+                    <PrivateRouter>
+                        <ChangePasswordScreen />
                     </PrivateRouter>
                 }
             />

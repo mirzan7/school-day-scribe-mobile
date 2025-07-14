@@ -13,47 +13,55 @@ import {
     Camera,
     Settings,
 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast"; // Assuming this is the correct toast import for this component
 import api from "../../utils/axios";
+import { useNavigate } from "react-router-dom";
 
 const TeacherProfile = ({ user, handleLogout }) => {
     const [classTaught, setClassTaught] = useState(0);
+    const navigate = useNavigate();
+
+    // --- FIXED: This function now always navigates to the change password page ---
     const handleChangePassword = () => {
-        toast({
-            title: "Backend Required",
-            description:
-                "Connect to Supabase to enable password changes and user management",
-            variant: "destructive",
-        });
+        navigate("/change-password");
     };
 
     const handleChangeAvatar = () => {
+        // This function can be implemented when backend file upload is ready
         toast({
-            title: "Backend Required",
+            title: "Feature Not Available",
             description:
-                "Connect to Supabase to enable avatar uploads and file storage",
+                "Changing your profile photo is not yet implemented.",
             variant: "destructive",
         });
     };
 
     const fetchData = async () => {
         try {
-          
+            // Fetches profile-specific data, like stats
             const response = await api.get("/profile/");
             setClassTaught(response.data.count);
         } catch (error) {
-          console.log(error);
-          
+            console.error("Failed to fetch profile data:", error);
+            toast({
+                title: "Error",
+                description: "Could not load teacher stats.",
+                variant: "destructive",
+            });
         }
     };
+
     useEffect(() => {
         fetchData();
     }, []);
 
+    // Creates initials from the username for the avatar fallback
     const initials = user.username
-        .split(" ")
-        .map((n) => n[0])
-        .join("");
+        ? user.username
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+        : "U";
 
     return (
         <div className="p-4 space-y-6 pb-32">
@@ -82,6 +90,7 @@ const TeacherProfile = ({ user, handleLogout }) => {
                             </Avatar>
                             <Button
                                 size="sm"
+                                variant="outline"
                                 className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0"
                                 onClick={handleChangeAvatar}
                             >
@@ -121,14 +130,14 @@ const TeacherProfile = ({ user, handleLogout }) => {
                         <Lock className="h-4 w-4 mr-2" />
                         Change Password
                     </Button>
-                    <Button
+                    {/* <Button
                         variant="outline"
                         className="w-full justify-start"
                         onClick={handleChangeAvatar}
                     >
                         <Camera className="h-4 w-4 mr-2" />
                         Change Profile Photo
-                    </Button>
+                    </Button> */}
                 </CardContent>
             </Card>
 
@@ -141,13 +150,13 @@ const TeacherProfile = ({ user, handleLogout }) => {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                        <div className="flex justify-between items-center py-2">
+                        <div className="flex justify-between items-center py-2 border-b">
                             <span className="text-muted-foreground">Role</span>
                             <span className="font-medium text-foreground capitalize">
                                 {user.role}
                             </span>
                         </div>
-                        <div className="flex justify-between items-center py-2">
+                        <div className="flex justify-between items-center py-2 border-b">
                             <span className="text-muted-foreground">
                                 Department
                             </span>
@@ -175,14 +184,14 @@ const TeacherProfile = ({ user, handleLogout }) => {
                     </CardHeader>
                     <CardContent>
                         <p className="text-sm text-muted-foreground mb-3">
-                            This week's activities
+                            Total classes assigned
                         </p>
                         <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
                             <div className="text-3xl font-bold text-primary mb-1">
                                 {classTaught || 0}
                             </div>
                             <div className="text-sm text-primary/80 font-medium">
-                                Classes Taught
+                                Classes
                             </div>
                         </div>
                     </CardContent>

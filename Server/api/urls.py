@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import (
 )
 from .views import (
     AddTeacher,
+    ChangePassword,
     CustomTeacherReportView,
     PrincipalView,
     TeacherReportView,
@@ -30,4 +31,5 @@ urlpatterns = [
     path("teacher-reports/", CustomTeacherReportView.as_view()),
     path('dashboard/', UnifiedDashboardView.as_view(), name='dashboard'),
     path("principal-reports/",PrincipalView.as_view()), 
+    path("change-password/",ChangePassword.as_view()),
 ]

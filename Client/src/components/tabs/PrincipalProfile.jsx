@@ -33,7 +33,16 @@ import {
     Loader2,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import api from "../../utils/axios";
+import axios from "axios"; // Import axios directly
+import { useNavigate } from "react-router-dom";
+
+// FIX: The original import for 'api' could not be resolved.
+// A local axios instance is created here as a replacement.
+// You may need to configure this with your actual backend base URL and authentication headers.
+const api = axios.create({
+    baseURL: "/api", // IMPORTANT: Replace with your actual API base URL
+});
+
 
 const PrincipalProfile = ({ user, handleLogout }) => {
     const [isAddTeacherOpen, setIsAddTeacherOpen] = useState(false);
@@ -47,13 +56,14 @@ const PrincipalProfile = ({ user, handleLogout }) => {
         role: "teacher",
         phone: "",
     });
+    const navigate = useNavigate();
 
     const fetchTeachers = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/profile/');
+            const response = await api.get('/profile/'); // This now uses the local 'api' instance
             console.log(response.data);
-            
+
             // Transform the backend data to match the expected format
             const transformedTeachers = response.data.map(teacher => ({
                 id: teacher.teacher_id,
@@ -65,7 +75,7 @@ const PrincipalProfile = ({ user, handleLogout }) => {
                 phone: teacher.phone,
                 created_at: teacher.created_at
             }));
-            
+
             setTeachers(transformedTeachers);
         } catch (error) {
             console.error('Error fetching teachers:', error);
@@ -84,19 +94,17 @@ const PrincipalProfile = ({ user, handleLogout }) => {
     }, []);
 
     const handleChangePassword = () => {
-        toast({
-            title: "Backend Required",
-            description:
-                "Connect to Supabase to enable password changes and user management",
-            variant: "destructive",
-        });
+        // Navigate to the change password page
+        navigate("/change-password");
     };
+
+    
 
     const handleChangeAvatar = () => {
         toast({
-            title: "Backend Required",
+            title: "Feature Not Available",
             description:
-                "Connect to Supabase to enable avatar uploads and file storage",
+                "Changing your profile photo is not yet implemented.",
             variant: "destructive",
         });
     };
@@ -111,7 +119,7 @@ const PrincipalProfile = ({ user, handleLogout }) => {
         ) {
             toast({
                 title: "Missing Information",
-                description: "Please fill in all fields",
+                description: "Please fill in all required fields",
                 variant: "destructive",
             });
             return;
@@ -129,12 +137,12 @@ const PrincipalProfile = ({ user, handleLogout }) => {
 
         try {
             setSubmitting(true);
-            
+
             // Make API call to add teacher
             const response = await api.post('/create/teacher/', teacherForm);
             console.log(response.data);
-            
-            
+
+
             toast({
                 title: "Teacher Added",
                 description: `${teacherForm.name} has been added successfully`,
@@ -142,7 +150,7 @@ const PrincipalProfile = ({ user, handleLogout }) => {
 
             // Refresh the teachers list
             await fetchTeachers();
-            
+
             // Reset form and close dialog
             setIsAddTeacherOpen(false);
             setTeacherForm({
@@ -150,6 +158,7 @@ const PrincipalProfile = ({ user, handleLogout }) => {
                 teacherId: "",
                 department: "",
                 role: "teacher",
+                phone: "",
             });
         } catch (error) {
             console.error('Error adding teacher:', error);
@@ -164,9 +173,11 @@ const PrincipalProfile = ({ user, handleLogout }) => {
     };
 
     const initials = user.username
-        .split(" ")
-        .map((n) => n[0])
-        .join("");
+        ? user.username
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+        : "P";
 
     return (
         <div className="p-4 space-y-6 pb-32">
@@ -176,10 +187,10 @@ const PrincipalProfile = ({ user, handleLogout }) => {
                         <Shield className="h-8 w-8 text-primary" />
                     </div>
                     <h2 className="text-2xl font-bold text-foreground mb-2">
-                        Profile
+                        Principal Profile
                     </h2>
                     <p className="text-muted-foreground">
-                        Manage your account and preferences
+                        Manage staff and school-wide settings
                     </p>
                 </div>
             </div>
@@ -195,6 +206,7 @@ const PrincipalProfile = ({ user, handleLogout }) => {
                             </Avatar>
                             <Button
                                 size="sm"
+                                variant="outline"
                                 className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0"
                                 onClick={handleChangeAvatar}
                             >
@@ -493,13 +505,13 @@ const PrincipalProfile = ({ user, handleLogout }) => {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                        <div className="flex justify-between items-center py-2">
+                        <div className="flex justify-between items-center py-2 border-b">
                             <span className="text-muted-foreground">Role</span>
                             <span className="font-medium text-foreground capitalize">
                                 {user.role}
                             </span>
                         </div>
-                        <div className="flex justify-between items-center py-2">
+                        <div className="flex justify-between items-center py-2 border-b">
                             <span className="text-muted-foreground">
                                 Department
                             </span>
@@ -527,7 +539,7 @@ const PrincipalProfile = ({ user, handleLogout }) => {
                     </CardHeader>
                     <CardContent>
                         <p className="text-sm text-muted-foreground mb-3">
-                            This week's activities
+                            School-wide statistics
                         </p>
                         <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
                             <div className="text-3xl font-bold text-primary mb-1">
