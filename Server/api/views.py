@@ -1,5 +1,7 @@
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from homework.serializers import HomeworkHomeworkSerializer, HomeworkTeacherOverviewSerializer, HomeworkTeacherReportSerializer
+from django.utils.dateparse import parse_date
 from .models import User
 from homework.models import Class, Homework, Subject, Teacher, TeacherReport
 from .serializers import (
@@ -510,3 +512,121 @@ class UnifiedDashboardView(APIView):
             }
         except Exception:
             return {}
+        
+        
+class PrincipalView(APIView):
+    permission_classes = [IsAuthenticated]
+   
+    def get(self, request):
+        user = request.user
+        date_str = request.query_params.get('date')
+        
+        # Parse date or use today
+        if date_str:
+            try:
+                target_date = parse_date(date_str)
+                if not target_date:
+                    return Response(
+                        {"error": "Invalid date format. Use YYYY-MM-DD"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            except ValueError:
+                return Response(
+                    {"error": "Invalid date format. Use YYYY-MM-DD"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            target_date = timezone.now().date()
+        
+        # Get homework for the specified date
+        homework_queryset = Homework.objects.filter(
+            assigned_date__date=target_date,
+            is_active=True
+        ).select_related('teacher__user', 'subject', 'class_assigned')
+        
+        # Get teacher reports for the specified date
+        teacher_reports = TeacherReport.objects.filter(
+            created_at__date=target_date
+        ).select_related('teacher__user', 'subject', 'class_assigned', 'homework')
+        
+        # Get all teachers with their overview data
+        teachers = Teacher.objects.all()
+        
+        # Serialize the data
+        teachers_data = HomeworkTeacherOverviewSerializer(teachers, many=True).data
+        homework_data = HomeworkHomeworkSerializer(homework_queryset, many=True).data
+        reports_data = HomeworkTeacherReportSerializer(teacher_reports, many=True).data
+        
+        # Create summary statistics
+        total_homework_assigned = homework_queryset.count()
+        total_teachers_with_homework = homework_queryset.values('teacher').distinct().count()
+        total_reports_submitted = teacher_reports.count()
+        
+        # Group homework by teacher for easier frontend consumption
+        homework_by_teacher = {}
+        for hw in homework_data:
+            teacher_name = hw['teacher_name']
+            if teacher_name not in homework_by_teacher:
+                homework_by_teacher[teacher_name] = []
+            homework_by_teacher[teacher_name].append(hw)
+        
+        # Group reports by teacher
+        reports_by_teacher = {}
+        for report in reports_data:
+            teacher_name = report['teacher_name']
+            if teacher_name not in reports_by_teacher:
+                reports_by_teacher[teacher_name] = []
+            reports_by_teacher[teacher_name].append(report)
+        
+        response_data = {
+            "date": target_date,
+            "teachers": teachers_data,
+            "homework": homework_data,
+            "reports": reports_data,
+            "homework_by_teacher": homework_by_teacher,
+            "reports_by_teacher": reports_by_teacher,
+            "summary": {
+                "total_homework_assigned": total_homework_assigned,
+                "total_teachers_with_homework": total_teachers_with_homework,
+                "total_reports_submitted": total_reports_submitted,
+                "total_teachers": teachers.count()
+            }
+        }
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+
+# Additional view for homework approval/rejection if needed
+# class HomeworkApprovalView(APIView):
+#     permission_classes = [IsAuthenticated]
+    
+#     def post(self, request, homework_id):
+#         user = request.user
+#         action = request.data.get('action')  # 'approve' or 'reject'
+#         reason = request.data.get('reason', '')
+        
+#         try:
+#             homework = Homework.objects.get(id=homework_id)
+#         except Homework.DoesNotExist:
+#             return Response(
+#                 {"error": "Homework not found"},
+#                 status=status.HTTP_404_NOT_FOUND
+#             )
+        
+#         if action == 'approve':
+#             # Add approval logic here if needed
+#             # You might want to add an approved_by field to Homework model
+#             return Response(
+#                 {"message": "Homework approved successfully"},
+#                 status=status.HTTP_200_OK
+#             )
+#         elif action == 'reject':
+#             # Add rejection logic here if needed
+#             return Response(
+#                 {"message": "Homework rejected successfully"},
+#                 status=status.HTTP_200_OK
+#             )
+#         else:
+#             return Response(
+#                 {"error": "Invalid action. Use 'approve' or 'reject'"},
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
