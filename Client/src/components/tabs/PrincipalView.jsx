@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { User, Shield, X, Check } from "lucide-react";
+import { User, Shield, X, Check, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import api from "../../utils/axios";
 
@@ -20,31 +20,109 @@ const PrincipalView = ({ user }) => {
         }
     });
     const [loading, setLoading] = useState(true);
+    const [lastUpdated, setLastUpdated] = useState(new Date());
 
     // Dialog state
     const [isPendingDialogOpen, setIsPendingDialogOpen] = useState(false);
     const [selectedTeacherPending, setSelectedTeacherPending] = useState([]);
 
-    useEffect(() => {
-        fetchDashboardData();
-    }, []);
+    // Auto-refresh state
+    const intervalRef = useRef(null);
+    const isDialogOpenRef = useRef(false);
 
-    const fetchDashboardData = async () => {
+    // Update ref when dialog is open (principal is reviewing approvals)
+    useEffect(() => {
+        isDialogOpenRef.current = isPendingDialogOpen;
+    }, [isPendingDialogOpen]);
+
+    const fetchDashboardData = async (showToast = false) => {
         try {
+            // Don't fetch if principal is reviewing pending approvals
+            if (isDialogOpenRef.current) {
+                console.log("Skipping API call - principal is reviewing approvals");
+                return;
+            }
+
             setLoading(true);
             // Use the unified dashboard API
             const response = await api.get("/dashboard/");
             setDashboardData(response.data);
+            setLastUpdated(new Date());
+            
+            if (showToast) {
+                toast({
+                    title: "Dashboard Updated",
+                    description: "Dashboard data has been refreshed.",
+                });
+            }
         } catch (error) {
             console.error("Failed to fetch dashboard data:", error);
-            toast({ 
-                title: "Error", 
-                description: "Could not load dashboard data.", 
-                variant: "destructive" 
-            });
+            if (showToast) {
+                toast({ 
+                    title: "Error", 
+                    description: "Could not refresh dashboard data.", 
+                    variant: "destructive" 
+                });
+            }
         } finally {
             setLoading(false);
         }
+    };
+
+    const startAutoRefresh = () => {
+        // Clear any existing interval
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+        }
+
+        // Only start if not reviewing approvals
+        if (!isDialogOpenRef.current) {
+            // Set up new interval for 2 minutes (120000 ms)
+            intervalRef.current = setInterval(() => {
+                // Double-check before making API call
+                if (!isDialogOpenRef.current) {
+                    fetchDashboardData(true); // Show toast for auto-refresh
+                }
+            }, 120000);
+            console.log("Auto-refresh started - will refresh every 2 minutes");
+        }
+    };
+
+    const stopAutoRefresh = () => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+            console.log("Auto-refresh stopped");
+        }
+    };
+
+    useEffect(() => {
+        // Initial fetch
+        fetchDashboardData();
+        
+        // Start auto-refresh
+        startAutoRefresh();
+
+        // Cleanup on unmount
+        return () => {
+            stopAutoRefresh();
+        };
+    }, []);
+
+    // Pause/resume auto-refresh based on dialog state
+    useEffect(() => {
+        if (isPendingDialogOpen) {
+            console.log("Pausing auto-refresh - principal is reviewing approvals");
+            stopAutoRefresh();
+        } else {
+            console.log("Resuming auto-refresh - principal finished reviewing");
+            startAutoRefresh();
+        }
+    }, [isPendingDialogOpen]);
+
+    // Manual refresh function
+    const handleManualRefresh = () => {
+        fetchDashboardData(true);
     };
 
     // --- Component Functions ---
@@ -73,6 +151,7 @@ const PrincipalView = ({ user }) => {
             // Update dashboard data from response
             if (response.data.dashboard_data) {
                 setDashboardData(response.data.dashboard_data);
+                setLastUpdated(new Date());
             }
 
             // Update dialog data
@@ -106,6 +185,7 @@ const PrincipalView = ({ user }) => {
             // Update dashboard data from response
             if (response.data.dashboard_data) {
                 setDashboardData(response.data.dashboard_data);
+                setLastUpdated(new Date());
             }
 
             // Update dialog data
@@ -129,8 +209,15 @@ const PrincipalView = ({ user }) => {
         }
     };
 
+    const formatLastUpdated = (date) => {
+        return date.toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    };
+
     // Show loading state
-    if (loading) {
+    if (loading && !dashboardData.pending_approvals.length) {
         return (
             <div className="p-6 space-y-8 pb-32 max-w-2xl mx-auto">
                 <div className="text-center space-y-4 apple-fade-in">
@@ -150,12 +237,34 @@ const PrincipalView = ({ user }) => {
         <div className="p-6 space-y-8 pb-32 max-w-2xl mx-auto">
             {/* Header */}
             <div className="text-center space-y-4 apple-fade-in">
-                <div className="w-16 h-16 apple-card-elevated flex items-center justify-center mx-auto">
-                    <Shield className="h-8 w-8 theme-text" />
+                <div className="flex items-center justify-between">
+                    <div className="flex-1"></div>
+                    <div className="flex flex-col items-center">
+                        <div className="w-16 h-16 apple-card-elevated flex items-center justify-center">
+                            <Shield className="h-8 w-8 theme-text" />
+                        </div>
+                        <h2 className="text-3xl font-bold text-gray-900 mt-4">Principal Dashboard</h2>
+                        <p className="text-gray-600 text-lg">Monitor teacher activities and approvals</p>
+                    </div>
+                    <div className="flex-1 flex justify-end">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleManualRefresh}
+                            disabled={isPendingDialogOpen || loading}
+                            className="p-2"
+                        >
+                            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                        </Button>
+                    </div>
                 </div>
-                <div>
-                    <h2 className="text-3xl font-bold text-gray-900">Principal Dashboard</h2>
-                    <p className="text-gray-600 text-lg">Monitor teacher activities and approvals</p>
+                <div className="text-xs text-gray-500">
+                    Last updated: {formatLastUpdated(lastUpdated)}
+                    {isPendingDialogOpen && (
+                        <span className="ml-2 text-yellow-600 font-medium">
+                            (Auto-refresh paused)
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -298,6 +407,13 @@ const PrincipalView = ({ user }) => {
                         <div className="text-sm text-gray-600">Today</div>
                     </CardContent>
                 </Card>
+            </div>
+
+            {/* Auto-refresh status footer */}
+            <div className="text-center pt-4">
+                <p className="text-xs text-gray-400">
+                    Auto-refresh: {isPendingDialogOpen ? 'Paused' : 'Every 2 min'}
+                </p>
             </div>
 
             {/* Pending Approvals Dialog */}

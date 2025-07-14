@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -13,34 +13,38 @@ import {
     Camera,
     Settings,
 } from "lucide-react";
-import { toast } from "@/hooks/use-toast"; // Assuming this is the correct toast import for this component
+import { toast } from "@/hooks/use-toast";
 import api from "../../utils/axios";
 import { useNavigate } from "react-router-dom";
 
-const TeacherProfile = ({ user, handleLogout }) => {
+const TeacherProfile = ({ user, handleLogout, isAddingReport = false }) => {
     const [classTaught, setClassTaught] = useState(0);
+    const [lastUpdated, setLastUpdated] = useState(new Date());
     const navigate = useNavigate();
+    const intervalRef = useRef(null);
+    const isAddingReportRef = useRef(isAddingReport);
 
-    // --- FIXED: This function now always navigates to the change password page ---
+    // Update ref when prop changes
+    useEffect(() => {
+        isAddingReportRef.current = isAddingReport;
+    }, [isAddingReport]);
+
     const handleChangePassword = () => {
         navigate("/change-password");
     };
 
-    // const handleChangeAvatar = () => {
-    //     // This function can be implemented when backend file upload is ready
-    //     toast({
-    //         title: "Feature Not Available",
-    //         description:
-    //             "Changing your profile photo is not yet implemented.",
-    //         variant: "destructive",
-    //     });
-    // };
-
-    const fetchData = async () => {
+    const fetchData = async (showToast = false) => {
         try {
-            // Fetches profile-specific data, like stats
             const response = await api.get("/profile/");
             setClassTaught(response.data.count);
+            setLastUpdated(new Date());
+            
+            if (showToast) {
+                toast({
+                    title: "Profile Updated",
+                    description: "Your profile data has been refreshed.",
+                });
+            }
         } catch (error) {
             console.error("Failed to fetch profile data:", error);
             toast({
@@ -51,9 +55,61 @@ const TeacherProfile = ({ user, handleLogout }) => {
         }
     };
 
+    const startAutoRefresh = () => {
+        // Clear any existing interval
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+        }
+
+        // Only start if not adding a report
+        if (!isAddingReportRef.current) {
+            // Set up new interval for 5 minutes (300000 ms)
+            intervalRef.current = setInterval(() => {
+                // Double-check before making API call
+                if (!isAddingReportRef.current) {
+                    fetchData(true); // Show toast for auto-refresh
+                }
+            }, 300000);
+            console.log("Auto-refresh started - will refresh every 5 minutes");
+        }
+    };
+
+    const stopAutoRefresh = () => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+            console.log("Auto-refresh stopped");
+        }
+    };
+
     useEffect(() => {
+        // Initial fetch
         fetchData();
+        
+        // Start auto-refresh
+        startAutoRefresh();
+
+        // Cleanup on unmount
+        return () => {
+            stopAutoRefresh();
+        };
     }, []);
+
+    // Pause/resume auto-refresh based on isAddingReport prop
+    useEffect(() => {
+        if (isAddingReport) {
+            console.log("Pausing auto-refresh - teacher is adding a report");
+            stopAutoRefresh();
+        } else {
+            console.log("Resuming auto-refresh - teacher finished adding report");
+            startAutoRefresh();
+        }
+    }, [isAddingReport]);
+
+    // Manual refresh function
+    const handleManualRefresh = () => {
+        fetchData(true);
+    };
 
     // Creates initials from the username for the avatar fallback
     const initials = user.username
@@ -62,6 +118,13 @@ const TeacherProfile = ({ user, handleLogout }) => {
               .map((n) => n[0])
               .join("")
         : "U";
+
+    const formatLastUpdated = (date) => {
+        return date.toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    };
 
     return (
         <div className="p-4 space-y-6 pb-32">
@@ -76,6 +139,14 @@ const TeacherProfile = ({ user, handleLogout }) => {
                     <p className="text-muted-foreground">
                         Manage your account and preferences
                     </p>
+                    <div className="mt-2 text-xs text-muted-foreground">
+                        Last updated: {formatLastUpdated(lastUpdated)}
+                        {isAddingReport && (
+                            <span className="ml-2 text-yellow-600 font-medium">
+                                (Auto-refresh paused)
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -88,14 +159,6 @@ const TeacherProfile = ({ user, handleLogout }) => {
                                     {initials}
                                 </AvatarFallback>
                             </Avatar>
-                            {/* <Button
-                                size="sm"
-                                variant="outline"
-                                className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0"
-                                onClick={handleChangeAvatar}
-                            >
-                                <Camera className="h-4 w-4" />
-                            </Button> */}
                         </div>
                         <h3 className="text-xl font-semibold text-foreground mb-1">
                             {user.name}
@@ -116,9 +179,20 @@ const TeacherProfile = ({ user, handleLogout }) => {
             {/* Account Settings */}
             <Card className="shadow-sm">
                 <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center">
-                        <Settings className="h-5 w-5 mr-2 text-primary" />
-                        Account Settings
+                    <CardTitle className="text-lg flex items-center justify-between">
+                        <div className="flex items-center">
+                            <Settings className="h-5 w-5 mr-2 text-primary" />
+                            Account Settings
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleManualRefresh}
+                            disabled={isAddingReport}
+                            className="text-xs"
+                        >
+                            Refresh
+                        </Button>
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -130,14 +204,6 @@ const TeacherProfile = ({ user, handleLogout }) => {
                         <Lock className="h-4 w-4 mr-2" />
                         Change Password
                     </Button>
-                    {/* <Button
-                        variant="outline"
-                        className="w-full justify-start"
-                        onClick={handleChangeAvatar}
-                    >
-                        <Camera className="h-4 w-4 mr-2" />
-                        Change Profile Photo
-                    </Button> */}
                 </CardContent>
             </Card>
 
@@ -214,7 +280,7 @@ const TeacherProfile = ({ user, handleLogout }) => {
 
             <div className="text-center pt-4">
                 <p className="text-xs text-muted-foreground">
-                    School Reporter v1.0.0
+                    School Reporter v1.0.0 • Auto-refresh: {isAddingReport ? 'Paused' : 'Every 5 min'}
                 </p>
             </div>
         </div>

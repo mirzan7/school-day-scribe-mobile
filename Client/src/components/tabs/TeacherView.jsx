@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,7 @@ import {
     PlusCircle,
     Camera,
     X,
+    RefreshCw,
 } from "lucide-react";
 import { format } from "date-fns";
 import api from "../../utils/axios";
@@ -40,6 +41,7 @@ const TeacherView = ({ addActivity }) => {
     const [reports, setReports] = useState([]);
     const [subjects, setSubjects] = useState([]);
     const [classes, setClasses] = useState([]);
+    const [lastUpdated, setLastUpdated] = useState(new Date());
 
     // Other component state
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -50,9 +52,11 @@ const TeacherView = ({ addActivity }) => {
     const [inputType, setInputType] = useState("description");
     const [photoFile, setPhotoFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
-    
-    // FIX: Add state to track the ID of the report being edited
     const [editingReportId, setEditingReportId] = useState(null);
+
+    // Auto-refresh state
+    const intervalRef = useRef(null);
+    const isAddingReportRef = useRef(false);
 
     const [formData, setFormData] = useState({
         class: "",
@@ -64,24 +68,98 @@ const TeacherView = ({ addActivity }) => {
         homeworkDescription: "",
     });
 
+    // Update ref when dialog is open (teacher is adding/editing report)
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await api.get("/teacher-report/");
-                setReports(response.data.reports || []);
-                setSubjects(response.data.subjects || []);
-                setClasses(response.data.classes || []);
-            } catch (error) {
-                console.error("Failed to fetch teacher data:", error);
+        isAddingReportRef.current = isDialogOpen;
+    }, [isDialogOpen]);
+
+    const fetchData = async (showToast = false) => {
+        try {
+            // Don't fetch if teacher is adding/editing a report
+            if (isAddingReportRef.current) {
+                console.log("Skipping API call - teacher is adding/editing a report");
+                return;
+            }
+
+            const response = await api.get("/teacher-report/");
+            setReports(response.data.reports || []);
+            setSubjects(response.data.subjects || []);
+            setClasses(response.data.classes || []);
+            setLastUpdated(new Date());
+            
+            if (showToast) {
+                toast({
+                    title: "Schedule Updated",
+                    description: "Your schedule has been refreshed.",
+                });
+            }
+        } catch (error) {
+            console.error("Failed to fetch teacher data:", error);
+            if (showToast) {
                 toast({
                     title: "Error",
-                    description: "Could not fetch schedule.",
+                    description: "Could not refresh schedule.",
                     variant: "destructive",
                 });
             }
-        };
+        }
+    };
+
+    const startAutoRefresh = () => {
+        // Clear any existing interval
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+        }
+
+        // Only start if not adding a report
+        if (!isAddingReportRef.current) {
+            // Set up new interval for 5 minutes (300000 ms)
+            intervalRef.current = setInterval(() => {
+                // Double-check before making API call
+                if (!isAddingReportRef.current) {
+                    fetchData(true); // Show toast for auto-refresh
+                }
+            }, 300000);
+            console.log("Auto-refresh started - will refresh every 5 minutes");
+        }
+    };
+
+    const stopAutoRefresh = () => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+            console.log("Auto-refresh stopped");
+        }
+    };
+
+    useEffect(() => {
+        // Initial fetch
         fetchData();
+        
+        // Start auto-refresh
+        startAutoRefresh();
+
+        // Cleanup on unmount
+        return () => {
+            stopAutoRefresh();
+        };
     }, []);
+
+    // Pause/resume auto-refresh based on dialog state
+    useEffect(() => {
+        if (isDialogOpen) {
+            console.log("Pausing auto-refresh - teacher is adding/editing a report");
+            stopAutoRefresh();
+        } else {
+            console.log("Resuming auto-refresh - teacher finished adding/editing report");
+            startAutoRefresh();
+        }
+    }, [isDialogOpen]);
+
+    // Manual refresh function
+    const handleManualRefresh = () => {
+        fetchData(true);
+    };
 
     // --- Data Transformation ---
     const dateString = format(new Date(), "yyyy-MM-dd");
@@ -147,7 +225,6 @@ const TeacherView = ({ addActivity }) => {
         setPhotoFile(null);
         setImagePreview(null);
         setExistingHomework([]);
-        // FIX: Reset the editing ID
         setEditingReportId(null); 
     };
 
@@ -157,7 +234,7 @@ const TeacherView = ({ addActivity }) => {
 
         if (existingActivity) {
             // This is an existing activity, populate form and set editing ID
-            setEditingReportId(existingActivity.id); // FIX: Set the ID of the report to be edited
+            setEditingReportId(existingActivity.id);
             setFormData({
                 class: existingActivity.class || "",
                 subject: existingActivity.subject || "",
@@ -170,7 +247,6 @@ const TeacherView = ({ addActivity }) => {
             setIsCustomClass(!allClasses.includes(existingActivity.class));
             setIsCustomSubject(!allSubjects.includes(existingActivity.subject));
         }
-        // For new activities, editingReportId is already null from resetFormState
         
         setSelectedPeriod(period);
         setIsDialogOpen(true);
@@ -198,7 +274,6 @@ const TeacherView = ({ addActivity }) => {
         const classObj = classes.find((c) => c.name === finalClass);
         const subjectObj = subjects.find((s) => s.name === finalSubject);
 
-        // This validation can be removed if custom classes/subjects are allowed and created on the fly
         if (!classObj || !subjectObj) {
             toast({
                 title: "Invalid Selection",
@@ -213,7 +288,6 @@ const TeacherView = ({ addActivity }) => {
             class_assigned_id: classObj.id,
             subject_id: subjectObj.id,
             activity: formData.description.trim(),
-            // FIX: Changed from homework_description to match backend expectation
             homework_description: formData.hasHomework
                 ? formData.homeworkDescription.trim()
                 : null,
@@ -221,11 +295,10 @@ const TeacherView = ({ addActivity }) => {
 
         try {
             let response;
-            // FIX: Check if we are editing or creating a new report
             if (editingReportId) {
                 // We are UPDATING an existing report
                 response = await api.put(
-                    `/teacher-report/${editingReportId}/`, // Use the PUT endpoint
+                    `/teacher-report/${editingReportId}/`,
                     reportData
                 );
                 // Update the specific report in the state
@@ -242,7 +315,7 @@ const TeacherView = ({ addActivity }) => {
             } else {
                 // We are CREATING a new report
                 response = await api.post(
-                    "/teacher-report/create/", // Use the POST endpoint
+                    "/teacher-report/create/",
                     reportData
                 );
                 // Add the new report to the state
@@ -266,22 +339,46 @@ const TeacherView = ({ addActivity }) => {
             });
         }
     };
+
+    const formatLastUpdated = (date) => {
+        return date.toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    };
     
-    // The rest of your JSX remains the same.
-    // ... (paste your entire return statement here) ...
     return (
         <div className="p-6 space-y-6 pb-32 max-w-2xl mx-auto">
             {/* Header */}
             <div className="text-center space-y-4 animate-fade-in">
-                <h2 className="text-2xl font-bold text-gray-900">
-                    Today's Schedule
-                </h2>
-                <div className="text-center">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                        Today's Schedule
+                    </h2>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleManualRefresh}
+                        disabled={isDialogOpen}
+                        className="p-2"
+                    >
+                        <RefreshCw className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div className="text-center space-y-2">
                     <div className="inline-flex items-center space-x-2 px-4 py-2 bg-white/80 rounded-xl border border-gray-200">
                         <CalendarIcon className="h-4 w-4 theme-text" />
                         <span className="font-medium text-gray-900">
                             {format(new Date(), "EEEE, MMM d, yyyy")}
                         </span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                        Last updated: {formatLastUpdated(lastUpdated)}
+                        {isDialogOpen && (
+                            <span className="ml-2 text-yellow-600 font-medium">
+                                (Auto-refresh paused)
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -379,6 +476,13 @@ const TeacherView = ({ addActivity }) => {
                     );
                 })}
             </div>
+
+            {/* Auto-refresh status footer */}
+            {/* <div className="text-center pt-4">
+                <p className="text-xs text-gray-400">
+                    Auto-refresh: {isDialogOpen ? 'Paused' : 'Every 5 min'}
+                </p>
+            </div> */}
 
             {/* Add Activity Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -553,7 +657,7 @@ const TeacherView = ({ addActivity }) => {
                                 type="submit"
                                 className="flex-1 theme-primary rounded-xl h-12 font-medium"
                             >
-                                Send for Approval
+                                {editingReportId ? "Update Report" : "Send for Approval"}
                             </Button>
                         </div>
                     </form>
