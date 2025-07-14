@@ -1,5 +1,5 @@
 from rest_framework_simplejwt.views import TokenObtainPairView
-
+from rest_framework.decorators import api_view
 from homework.serializers import HomeworkHomeworkSerializer, HomeworkTeacherOverviewSerializer, HomeworkTeacherReportSerializer
 from django.utils.dateparse import parse_date
 from .models import User
@@ -132,7 +132,7 @@ class GetTeacherReport(APIView):
             {
                 "reports": serializer.data,
                 "subjects": list(subjects.values("id", "name", "code")),
-                "classes": list(classes.values("id", "name", "section", "grade")),
+                "classes": list(classes.values("id", "name", "section", "grade","daily_homework_limit")),
             },
             status=200,
         )
@@ -614,3 +614,22 @@ class TeacherPasswordReset(APIView):
             print(e)
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
+    
+    
+@api_view(['GET'])
+def get_homework_count(request, class_id):
+   try:
+       class_obj = Class.objects.get(id=class_id)
+       today = timezone.now().date()
+       current_count = class_obj.get_homework_count_for_date(today)
+       
+       return Response({
+           'current_count': current_count,
+           'limit': class_obj.daily_homework_limit,
+           'can_assign_more': class_obj.can_assign_homework_today(),
+           'date': today.isoformat()
+       })
+   except Class.DoesNotExist:
+       return Response({'error': 'Class not found'}, status=404)
+   except Exception as e:
+       return Response({'error': str(e)}, status=500)

@@ -32,6 +32,8 @@ import {
     Camera,
     X,
     RefreshCw,
+    AlertCircle,
+    CheckCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 import api from "../../utils/axios";
@@ -53,6 +55,10 @@ const TeacherView = ({ addActivity }) => {
     const [photoFile, setPhotoFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [editingReportId, setEditingReportId] = useState(null);
+
+    // Homework count state
+    const [homeworkCount, setHomeworkCount] = useState(null);
+    const [isLoadingHomeworkCount, setIsLoadingHomeworkCount] = useState(false);
 
     // Auto-refresh state
     const intervalRef = useRef(null);
@@ -102,6 +108,26 @@ const TeacherView = ({ addActivity }) => {
                     variant: "destructive",
                 });
             }
+        }
+    };
+
+    // Fetch homework count for a specific class
+    const fetchHomeworkCount = async (classId) => {
+        setIsLoadingHomeworkCount(true);
+        try {
+            // Assuming you have an endpoint that returns homework count for a class
+            const response = await api.get(`/homework/count/${classId}/`);
+            setHomeworkCount(response.data);
+        } catch (error) {
+            console.error("Failed to fetch homework count:", error);
+            toast({
+                title: "Error",
+                description: "Could not fetch homework count.",
+                variant: "destructive",
+            });
+            setHomeworkCount(null);
+        } finally {
+            setIsLoadingHomeworkCount(false);
         }
     };
 
@@ -159,6 +185,56 @@ const TeacherView = ({ addActivity }) => {
     // Manual refresh function
     const handleManualRefresh = () => {
         fetchData(true);
+    };
+
+    // Handle homework toggle
+    const handleHomeworkToggle = (checked) => {
+        setFormData((prev) => ({
+            ...prev,
+            hasHomework: checked,
+        }));
+
+        // If homework is enabled and we have a class selected, fetch homework count
+        if (checked) {
+            const selectedClass = isCustomClass ? formData.customClass : formData.class;
+            const classObj = classes.find((c) => c.name === selectedClass);
+            
+            if (classObj) {
+                fetchHomeworkCount(classObj.id);
+            }
+        } else {
+            // Clear homework count when homework is disabled
+            setHomeworkCount(null);
+        }
+    };
+
+    // Handle class selection change
+    const handleClassChange = (value) => {
+        setFormData((prev) => ({
+            ...prev,
+            class: value,
+        }));
+
+        // If homework is enabled, fetch homework count for the new class
+        if (formData.hasHomework) {
+            const classObj = classes.find((c) => c.name === value);
+            if (classObj) {
+                fetchHomeworkCount(classObj.id);
+            }
+        }
+    };
+
+    // Handle custom class change
+    const handleCustomClassChange = (value) => {
+        setFormData((prev) => ({
+            ...prev,
+            customClass: value,
+        }));
+
+        // For custom classes, we might not have homework count data
+        if (formData.hasHomework) {
+            setHomeworkCount(null);
+        }
     };
 
     // --- Data Transformation ---
@@ -225,7 +301,8 @@ const TeacherView = ({ addActivity }) => {
         setPhotoFile(null);
         setImagePreview(null);
         setExistingHomework([]);
-        setEditingReportId(null); 
+        setEditingReportId(null);
+        setHomeworkCount(null); // Reset homework count
     };
 
     const handleAddActivity = (period) => {
@@ -246,6 +323,14 @@ const TeacherView = ({ addActivity }) => {
             });
             setIsCustomClass(!allClasses.includes(existingActivity.class));
             setIsCustomSubject(!allSubjects.includes(existingActivity.subject));
+
+            // If existing activity has homework, fetch homework count
+            if (existingActivity.hasHomework) {
+                const classObj = classes.find((c) => c.name === existingActivity.class);
+                if (classObj) {
+                    fetchHomeworkCount(classObj.id);
+                }
+            }
         }
         
         setSelectedPeriod(period);
@@ -281,6 +366,18 @@ const TeacherView = ({ addActivity }) => {
                 variant: "destructive",
             });
             return;
+        }
+
+        // Check homework limit before submitting
+        if (formData.hasHomework && homeworkCount) {
+            if (homeworkCount.current_count >= homeworkCount.limit) {
+                toast({
+                    title: "Homework Limit Reached",
+                    description: `Cannot assign more homework. Daily limit (${homeworkCount.limit}) has been reached for this class.`,
+                    variant: "destructive",
+                });
+                return;
+            }
         }
 
         const reportData = {
@@ -345,6 +442,54 @@ const TeacherView = ({ addActivity }) => {
             hour: '2-digit', 
             minute: '2-digit' 
         });
+    };
+
+    // Render homework count badge
+    const renderHomeworkCount = () => {
+        if (!formData.hasHomework) return null;
+
+        if (isLoadingHomeworkCount) {
+            return (
+                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                    <span>Loading homework count...</span>
+                </div>
+            );
+        }
+
+        if (!homeworkCount) {
+            return (
+                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Unable to fetch homework count</span>
+                </div>
+            );
+        }
+
+        const { current_count, limit } = homeworkCount;
+        const isAtLimit = current_count >= limit;
+
+        return (
+            <div className={`flex items-center space-x-2 p-2 rounded-lg ${
+                isAtLimit ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'
+            }`}>
+                {isAtLimit ? (
+                    <AlertCircle className="h-4 w-4 text-red-600" />
+                ) : (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                )}
+                <span className={`text-sm font-medium ${
+                    isAtLimit ? 'text-red-700' : 'text-green-700'
+                }`}>
+                    Homework: {current_count}/{limit}
+                </span>
+                {isAtLimit && (
+                    <span className="text-xs text-red-600">
+                        (Daily limit reached)
+                    </span>
+                )}
+            </div>
+        );
     };
     
     return (
@@ -477,13 +622,6 @@ const TeacherView = ({ addActivity }) => {
                 })}
             </div>
 
-            {/* Auto-refresh status footer */}
-            {/* <div className="text-center pt-4">
-                <p className="text-xs text-gray-400">
-                    Auto-refresh: {isDialogOpen ? 'Paused' : 'Every 5 min'}
-                </p>
-            </div> */}
-
             {/* Add Activity Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="w-full max-w-md mx-auto rounded-2xl border-0 minimal-shadow-lg">
@@ -507,23 +645,13 @@ const TeacherView = ({ addActivity }) => {
                                 <Input
                                     placeholder="Enter new class (e.g., 11-Science-A)"
                                     value={formData.customClass}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            customClass: e.target.value,
-                                        }))
-                                    }
+                                    onChange={(e) => handleCustomClassChange(e.target.value)}
                                     className="rounded-xl border-gray-200 h-12"
                                 />
                             ) : (
                                 <Select
                                     value={formData.class}
-                                    onValueChange={(value) =>
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            class: value,
-                                        }))
-                                    }
+                                    onValueChange={handleClassChange}
                                 >
                                     <SelectTrigger className="rounded-xl border-gray-200 h-12">
                                         <SelectValue placeholder="Select class" />
@@ -616,15 +744,14 @@ const TeacherView = ({ addActivity }) => {
                                 <Switch
                                     id="homework-switch"
                                     checked={formData.hasHomework}
-                                    onCheckedChange={(checked) =>
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            hasHomework: checked,
-                                        }))
-                                    }
+                                    onCheckedChange={handleHomeworkToggle}
                                 />
                             </div>
                         </div>
+                        
+                        {/* Homework Count Display */}
+                        {renderHomeworkCount()}
+                        
                         {formData.hasHomework && (
                             <div className="space-y-2 animate-fade-in">
                                 <Label className="text-sm font-medium text-gray-700">
@@ -656,6 +783,7 @@ const TeacherView = ({ addActivity }) => {
                             <Button
                                 type="submit"
                                 className="flex-1 theme-primary rounded-xl h-12 font-medium"
+                                disabled={formData.hasHomework && homeworkCount?.current_count >= homeworkCount?.limit}
                             >
                                 {editingReportId ? "Update Report" : "Send for Approval"}
                             </Button>

@@ -13,6 +13,7 @@ from .views import (
     GetTeacherReport,
     ProfileView,
     UnifiedDashboardView,
+    get_homework_count,
 )
 
 urlpatterns = [
@@ -34,4 +35,5 @@ urlpatterns = [
     path("principal-reports/",PrincipalView.as_view()), 
     path("change-password/",ChangePassword.as_view()),
     path("reset-password/<int:id>", TeacherPasswordReset.as_view()),
+    path('homework/count/<int:class_id>/', get_homework_count, name='homework_count'),
 ]

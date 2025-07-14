@@ -6,7 +6,7 @@ export const useAuth = () => {
   const dispatch = useDispatch();
   const { accessToken, refreshToken, user } = useSelector((state) => state.auth);
   
-  const isAuthenticated = !!accessToken;
+  const isAuthenticated = !! user;
   
   const handleLogout = () => {
     dispatch(logout());
