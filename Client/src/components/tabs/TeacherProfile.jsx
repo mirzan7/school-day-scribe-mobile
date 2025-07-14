@@ -26,15 +26,15 @@ const TeacherProfile = ({ user, handleLogout }) => {
         navigate("/change-password");
     };
 
-    const handleChangeAvatar = () => {
-        // This function can be implemented when backend file upload is ready
-        toast({
-            title: "Feature Not Available",
-            description:
-                "Changing your profile photo is not yet implemented.",
-            variant: "destructive",
-        });
-    };
+    // const handleChangeAvatar = () => {
+    //     // This function can be implemented when backend file upload is ready
+    //     toast({
+    //         title: "Feature Not Available",
+    //         description:
+    //             "Changing your profile photo is not yet implemented.",
+    //         variant: "destructive",
+    //     });
+    // };
 
     const fetchData = async () => {
         try {
@@ -88,14 +88,14 @@ const TeacherProfile = ({ user, handleLogout }) => {
                                     {initials}
                                 </AvatarFallback>
                             </Avatar>
-                            <Button
+                            {/* <Button
                                 size="sm"
                                 variant="outline"
                                 className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0"
                                 onClick={handleChangeAvatar}
                             >
                                 <Camera className="h-4 w-4" />
-                            </Button>
+                            </Button> */}
                         </div>
                         <h3 className="text-xl font-semibold text-foreground mb-1">
                             {user.name}

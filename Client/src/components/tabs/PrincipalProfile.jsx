@@ -31,24 +31,31 @@ import {
     UserPlus,
     Shield,
     Loader2,
+    Phone,
+    Calendar,
+    Eye,
+    RefreshCw,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import axios from "axios"; // Import axios directly
+// import axios from "axios"; // Import axios directly
 import { useNavigate } from "react-router-dom";
+import api from "../../utils/axios";
 
 // FIX: The original import for 'api' could not be resolved.
 // A local axios instance is created here as a replacement.
 // You may need to configure this with your actual backend base URL and authentication headers.
-const api = axios.create({
-    baseURL: "/api", // IMPORTANT: Replace with your actual API base URL
-});
-
+// const api = axios.create({
+//     baseURL: "/api", // IMPORTANT: Replace with your actual API base URL
+// });
 
 const PrincipalProfile = ({ user, handleLogout }) => {
     const [isAddTeacherOpen, setIsAddTeacherOpen] = useState(false);
+    const [isTeacherDetailOpen, setIsTeacherDetailOpen] = useState(false);
+    const [selectedTeacher, setSelectedTeacher] = useState(null);
     const [teachers, setTeachers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [resettingPassword, setResettingPassword] = useState(false);
     const [teacherForm, setTeacherForm] = useState({
         name: "",
         teacherId: "",
@@ -61,24 +68,26 @@ const PrincipalProfile = ({ user, handleLogout }) => {
     const fetchTeachers = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/profile/'); // This now uses the local 'api' instance
+            const response = await api.get("/profile/"); // This now uses the local 'api' instance
             console.log(response.data);
 
             // Transform the backend data to match the expected format
-            const transformedTeachers = response.data.map(teacher => ({
+            const transformedTeachers = response.data.map((teacher) => ({
                 id: teacher.teacher_id,
                 name: teacher.user.username,
-                email: teacher.email || `${teacher.user.username.toLowerCase()}@school.edu`,
+                email:
+                    teacher.email ||
+                    `${teacher.user.username.toLowerCase()}@school.edu`,
                 teacherId: teacher.teacher_id,
                 department: teacher.department,
                 role: teacher.role,
                 phone: teacher.phone,
-                created_at: teacher.created_at
+                created_at: teacher.created_at,
             }));
 
             setTeachers(transformedTeachers);
         } catch (error) {
-            console.error('Error fetching teachers:', error);
+            console.error("Error fetching teachers:", error);
             toast({
                 title: "Error",
                 description: "Failed to load teachers data",
@@ -98,15 +107,43 @@ const PrincipalProfile = ({ user, handleLogout }) => {
         navigate("/change-password");
     };
 
-    
+    const handleTeacherClick = (teacher) => {
+        setSelectedTeacher(teacher);
+        setIsTeacherDetailOpen(true);
+    };
 
-    const handleChangeAvatar = () => {
-        toast({
-            title: "Feature Not Available",
-            description:
-                "Changing your profile photo is not yet implemented.",
-            variant: "destructive",
-        });
+    const handleResetTeacherPassword = async () => {
+        if (!selectedTeacher) return;
+
+        try {
+            setResettingPassword(true);
+
+            // Make API call to reset teacher's password
+            // Replace this with your actual API endpoint
+            const response = await api.post(
+                `/reset-password/${selectedTeacher.teacherId}`
+            );
+
+            if (response.status == 200) {
+                toast({
+                    title: "Password Reset",
+                    description: `Password has been reset for ${selectedTeacher.name}. A new password has been sent to their email.`,
+                });
+                setIsTeacherDetailOpen(false)
+            }
+
+            console.log("Password reset response:", response.data);
+        } catch (error) {
+            console.error("Error resetting password:", error);
+            toast({
+                title: "Error",
+                description: "Failed to reset password. Please try again.",
+                variant: "destructive",
+            });
+            // setResettingPassword(false);
+        } finally {
+            setResettingPassword(false);
+        }
     };
 
     const handleAddTeacher = async (e) => {
@@ -126,7 +163,11 @@ const PrincipalProfile = ({ user, handleLogout }) => {
         }
 
         // Check for duplicate teacher ID
-        if (teachers.some(teacher => teacher.teacherId === teacherForm.teacherId)) {
+        if (
+            teachers.some(
+                (teacher) => teacher.teacherId === teacherForm.teacherId
+            )
+        ) {
             toast({
                 title: "Teacher ID Exists",
                 description: "This teacher ID is already in use",
@@ -139,9 +180,8 @@ const PrincipalProfile = ({ user, handleLogout }) => {
             setSubmitting(true);
 
             // Make API call to add teacher
-            const response = await api.post('/create/teacher/', teacherForm);
+            const response = await api.post("/create/teacher/", teacherForm);
             console.log(response.data);
-
 
             toast({
                 title: "Teacher Added",
@@ -161,7 +201,7 @@ const PrincipalProfile = ({ user, handleLogout }) => {
                 phone: "",
             });
         } catch (error) {
-            console.error('Error adding teacher:', error);
+            console.error("Error adding teacher:", error);
             toast({
                 title: "Error",
                 description: "Failed to add teacher. Please try again.",
@@ -172,11 +212,28 @@ const PrincipalProfile = ({ user, handleLogout }) => {
         }
     };
 
-    const initials = user.username
-        ? user.username
+    const formatDate = (dateString) => {
+        if (!dateString) return "N/A";
+        return new Date(dateString).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
+    };
+
+    const getTeacherInitials = (name) => {
+        return name
             .split(" ")
             .map((n) => n[0])
             .join("")
+            .toUpperCase();
+    };
+
+    const initials = user.username
+        ? user.username
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
         : "P";
 
     return (
@@ -204,14 +261,6 @@ const PrincipalProfile = ({ user, handleLogout }) => {
                                     {initials}
                                 </AvatarFallback>
                             </Avatar>
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0"
-                                onClick={handleChangeAvatar}
-                            >
-                                <Camera className="h-4 w-4" />
-                            </Button>
                         </div>
                         <h3 className="text-xl font-semibold text-foreground mb-1">
                             {user.name}
@@ -246,14 +295,6 @@ const PrincipalProfile = ({ user, handleLogout }) => {
                         <Lock className="h-4 w-4 mr-2" />
                         Change Password
                     </Button>
-                    <Button
-                        variant="outline"
-                        className="w-full justify-start"
-                        onClick={handleChangeAvatar}
-                    >
-                        <Camera className="h-4 w-4 mr-2" />
-                        Change Profile Photo
-                    </Button>
                 </CardContent>
             </Card>
 
@@ -283,19 +324,24 @@ const PrincipalProfile = ({ user, handleLogout }) => {
                         {loading ? (
                             <div className="flex items-center justify-center p-8">
                                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                <span className="ml-2 text-sm text-gray-600">Loading teachers...</span>
+                                <span className="ml-2 text-sm text-gray-600">
+                                    Loading teachers...
+                                </span>
                             </div>
                         ) : teachers.length === 0 ? (
                             <div className="text-center p-8 text-gray-500">
                                 <UserPlus className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                                 <p className="text-sm">No teachers added yet</p>
-                                <p className="text-xs text-gray-400 mt-1">Click "Add Teacher" to get started</p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    Click "Add Teacher" to get started
+                                </p>
                             </div>
                         ) : (
                             teachers.map((teacher) => (
                                 <div
                                     key={teacher.id || teacher.teacherId}
-                                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                                    onClick={() => handleTeacherClick(teacher)}
                                 >
                                     <div className="flex-1">
                                         <p className="font-medium text-gray-900">
@@ -320,6 +366,9 @@ const PrincipalProfile = ({ user, handleLogout }) => {
                                         >
                                             {teacher.role}
                                         </Badge>
+                                        <div className="mt-1">
+                                            <Eye className="h-4 w-4 text-gray-400" />
+                                        </div>
                                     </div>
                                 </div>
                             ))
@@ -327,6 +376,154 @@ const PrincipalProfile = ({ user, handleLogout }) => {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Teacher Details Modal */}
+            <Dialog
+                open={isTeacherDetailOpen}
+                onOpenChange={setIsTeacherDetailOpen}
+            >
+                <DialogContent className="w-full max-w-md mx-auto rounded-2xl border-0 minimal-shadow-lg">
+                    <DialogHeader className="text-center pb-4">
+                        <DialogTitle className="flex items-center justify-center space-x-2 text-xl">
+                            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                                <User className="h-4 w-4 text-white" />
+                            </div>
+                            <span>Teacher Details</span>
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    {selectedTeacher && (
+                        <div className="space-y-6">
+                            {/* Teacher Avatar and Basic Info */}
+                            <div className="flex flex-col items-center text-center">
+                                <Avatar className="w-20 h-20 mb-4">
+                                    <AvatarFallback className="text-lg bg-blue-500 text-white">
+                                        {getTeacherInitials(
+                                            selectedTeacher.name
+                                        )}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                                    {selectedTeacher.name}
+                                </h3>
+                                <Badge className="bg-blue-100 text-blue-800 border-0 mb-2">
+                                    {selectedTeacher.role
+                                        .replace("_", " ")
+                                        .toUpperCase()}
+                                </Badge>
+                            </div>
+
+                            {/* Teacher Information */}
+                            <div className="space-y-4">
+                                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                        <User className="h-4 w-4 text-gray-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                            Teacher ID
+                                        </p>
+                                        <p className="font-medium text-gray-900">
+                                            {selectedTeacher.teacherId}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                        <Mail className="h-4 w-4 text-gray-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                            Email
+                                        </p>
+                                        <p className="font-medium text-gray-900">
+                                            {selectedTeacher.email}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                        <GraduationCap className="h-4 w-4 text-gray-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                            Department
+                                        </p>
+                                        <p className="font-medium text-gray-900">
+                                            {selectedTeacher.department}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {selectedTeacher.phone && (
+                                    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                            <Phone className="h-4 w-4 text-gray-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                                Phone
+                                            </p>
+                                            <p className="font-medium text-gray-900">
+                                                {selectedTeacher.phone}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                        <Calendar className="h-4 w-4 text-gray-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                            Joined
+                                        </p>
+                                        <p className="font-medium text-gray-900">
+                                            {formatDate(
+                                                selectedTeacher.created_at
+                                            )}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex space-x-3 pt-4">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() =>
+                                        setIsTeacherDetailOpen(false)
+                                    }
+                                    className="flex-1 rounded-xl border-gray-200 h-12"
+                                >
+                                    Close
+                                </Button>
+                                <Button
+                                    onClick={handleResetTeacherPassword}
+                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl h-12 font-medium"
+                                    disabled={resettingPassword}
+                                >
+                                    {resettingPassword ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                            Resetting...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <RefreshCw className="h-4 w-4 mr-2" />
+                                            Reset Password
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
 
             {/* Add Teacher Dialog */}
             <Dialog open={isAddTeacherOpen} onOpenChange={setIsAddTeacherOpen}>
@@ -405,31 +602,58 @@ const PrincipalProfile = ({ user, handleLogout }) => {
                                     <SelectValue placeholder="Select department" />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-xl">
-                                    <SelectItem value="Mathematics" className="rounded-lg">
+                                    <SelectItem
+                                        value="Mathematics"
+                                        className="rounded-lg"
+                                    >
                                         Mathematics
                                     </SelectItem>
-                                    <SelectItem value="Science" className="rounded-lg">
+                                    <SelectItem
+                                        value="Science"
+                                        className="rounded-lg"
+                                    >
                                         Science
                                     </SelectItem>
-                                    <SelectItem value="English" className="rounded-lg">
+                                    <SelectItem
+                                        value="English"
+                                        className="rounded-lg"
+                                    >
                                         English
                                     </SelectItem>
-                                    <SelectItem value="History" className="rounded-lg">
+                                    <SelectItem
+                                        value="History"
+                                        className="rounded-lg"
+                                    >
                                         History
                                     </SelectItem>
-                                    <SelectItem value="Geography" className="rounded-lg">
+                                    <SelectItem
+                                        value="Geography"
+                                        className="rounded-lg"
+                                    >
                                         Geography
                                     </SelectItem>
-                                    <SelectItem value="Physical Education" className="rounded-lg">
+                                    <SelectItem
+                                        value="Physical Education"
+                                        className="rounded-lg"
+                                    >
                                         Physical Education
                                     </SelectItem>
-                                    <SelectItem value="Arts" className="rounded-lg">
+                                    <SelectItem
+                                        value="Arts"
+                                        className="rounded-lg"
+                                    >
                                         Arts
                                     </SelectItem>
-                                    <SelectItem value="Computer Science" className="rounded-lg">
+                                    <SelectItem
+                                        value="Computer Science"
+                                        className="rounded-lg"
+                                    >
                                         Computer Science
                                     </SelectItem>
-                                    <SelectItem value="General Education" className="rounded-lg">
+                                    <SelectItem
+                                        value="General Education"
+                                        className="rounded-lg"
+                                    >
                                         General Education
                                     </SelectItem>
                                 </SelectContent>
@@ -452,16 +676,28 @@ const PrincipalProfile = ({ user, handleLogout }) => {
                                     <SelectValue placeholder="Select role" />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-xl">
-                                    <SelectItem value="teacher" className="rounded-lg">
+                                    <SelectItem
+                                        value="teacher"
+                                        className="rounded-lg"
+                                    >
                                         Teacher
                                     </SelectItem>
-                                    <SelectItem value="senior_teacher" className="rounded-lg">
+                                    <SelectItem
+                                        value="senior_teacher"
+                                        className="rounded-lg"
+                                    >
                                         Senior Teacher
                                     </SelectItem>
-                                    <SelectItem value="head_of_department" className="rounded-lg">
+                                    <SelectItem
+                                        value="head_of_department"
+                                        className="rounded-lg"
+                                    >
                                         Head of Department
                                     </SelectItem>
-                                    <SelectItem value="vice_principal" className="rounded-lg">
+                                    <SelectItem
+                                        value="vice_principal"
+                                        className="rounded-lg"
+                                    >
                                         Vice Principal
                                     </SelectItem>
                                 </SelectContent>

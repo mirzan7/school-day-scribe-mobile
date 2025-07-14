@@ -596,38 +596,21 @@ class PrincipalView(APIView):
         
         return Response(response_data, status=status.HTTP_200_OK)
 
-# Additional view for homework approval/rejection if needed
-# class HomeworkApprovalView(APIView):
-#     permission_classes = [IsAuthenticated]
+
+class TeacherPasswordReset(APIView):
+    permission_classes = [IsAuthenticated]
     
-#     def post(self, request, homework_id):
-#         user = request.user
-#         action = request.data.get('action')  # 'approve' or 'reject'
-#         reason = request.data.get('reason', '')
-        
-#         try:
-#             homework = Homework.objects.get(id=homework_id)
-#         except Homework.DoesNotExist:
-#             return Response(
-#                 {"error": "Homework not found"},
-#                 status=status.HTTP_404_NOT_FOUND
-#             )
-        
-#         if action == 'approve':
-#             # Add approval logic here if needed
-#             # You might want to add an approved_by field to Homework model
-#             return Response(
-#                 {"message": "Homework approved successfully"},
-#                 status=status.HTTP_200_OK
-#             )
-#         elif action == 'reject':
-#             # Add rejection logic here if needed
-#             return Response(
-#                 {"message": "Homework rejected successfully"},
-#                 status=status.HTTP_200_OK
-#             )
-#         else:
-#             return Response(
-#                 {"error": "Invalid action. Use 'approve' or 'reject'"},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
+    def post(self, request, id):
+        try:
+            teacher = Teacher.objects.get(teacher_id=id)
+            user = teacher.user
+            user.set_password("1234")
+            user.must_change_password = True
+            user.save()
+        except Teacher.DoesNotExist:
+            print("valid teacher not found")
+            return Response({"error": "Teacher not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            print(e)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)

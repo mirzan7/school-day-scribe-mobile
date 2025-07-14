@@ -7,6 +7,7 @@ from .views import (
     ChangePassword,
     CustomTeacherReportView,
     PrincipalView,
+    TeacherPasswordReset,
     TeacherReportView,
     LoginView,
     GetTeacherReport,
@@ -32,4 +33,5 @@ urlpatterns = [
     path('dashboard/', UnifiedDashboardView.as_view(), name='dashboard'),
     path("principal-reports/",PrincipalView.as_view()), 
     path("change-password/",ChangePassword.as_view()),
+    path("reset-password/<int:id>", TeacherPasswordReset.as_view()),
 ]
