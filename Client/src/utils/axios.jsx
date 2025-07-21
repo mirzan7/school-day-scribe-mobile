@@ -3,7 +3,7 @@ import axios from 'axios';
 import { store } from '../redux/store';
 import { updateAccessToken, logout } from '../redux/authSlice';
 
-const baseURL = 'http://127.0.0.1:8000/api';
+const baseURL = '/api';
 
 const api = axios.create({
   baseURL,
