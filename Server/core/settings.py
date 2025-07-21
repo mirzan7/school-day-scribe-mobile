@@ -13,8 +13,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 from corsheaders.defaults import default_headers
-
-
+import os
+from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -26,9 +26,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-peh*g&mzv-8qms1#a5a@a(^4&#ow-zodw!=--1%9v#9+zkeu8m"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["65.0.109.77"]
 
 
 # Application definition
@@ -65,6 +65,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "http://172.20.10.12:8080",
     "http://172.28.112.1:8080",
+    "http://65.0.109.77:8000",
 ]
 
 CORS_ORIGIN_ALLOW_ALL = False
@@ -99,11 +100,11 @@ WSGI_APPLICATION = "core.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "EVPS",
-        "USER": "postgres",
-        "PASSWORD": "2134",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": config("DB_NAME"),
+        "USER": config("DB_USER"),
+        "PASSWORD": config("DB_PASSWORD"),
+        "HOST": config("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
 
@@ -158,8 +159,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
-
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -201,3 +202,4 @@ SIMPLE_JWT = {
 #         'BACKEND': 'channels.layers.InMemoryChannelLayer'
 #     }
 # }
+
