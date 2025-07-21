@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Apple-inspired color palette */
+    /* Apple-inspired color palette with fallback values */
     --background: 248 250 252;
     --foreground: 15 23 42;
     --card: 255 255 255;
@@ -69,11 +69,29 @@
     @apply border-border;
   }
   
+  html {
+    /* Explicit background color for html element */
+    background-color: rgb(248 250 252); /* Same as --background */
+  }
+  
   body {
     @apply bg-background text-foreground font-sans;
+    /* Explicit fallback background color */
+    background-color: rgb(248 250 252);
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Ensure full height */
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Ensure root element has proper background */
+  #root {
+    min-height: 100vh;
+    background-color: rgb(248 250 252);
+    background: hsl(var(--background));
   }
 }
 
@@ -82,51 +100,63 @@
   .apple-card {
     @apply bg-white/70 backdrop-blur-xl border border-white/20 rounded-2xl;
     box-shadow: var(--apple-shadow);
+    /* Fallback for browsers that don't support backdrop-filter */
+    background-color: rgba(255, 255, 255, 0.7);
   }
   
   .apple-card-elevated {
     @apply bg-white/80 backdrop-blur-xl border border-white/30 rounded-2xl;
     box-shadow: var(--apple-shadow-lg);
+    background-color: rgba(255, 255, 255, 0.8);
   }
   
   .apple-glass {
     @apply bg-white/60 backdrop-blur-xl border border-white/20;
+    background-color: rgba(255, 255, 255, 0.6);
   }
   
   .apple-button {
     @apply bg-white/70 hover:bg-white/90 border border-white/30 backdrop-blur-xl rounded-xl transition-all duration-200;
     box-shadow: var(--apple-shadow-sm);
+    background-color: rgba(255, 255, 255, 0.7);
   }
   
   .apple-button:hover {
     box-shadow: var(--apple-shadow);
     transform: translateY(-1px);
+    background-color: rgba(255, 255, 255, 0.9);
   }
   
   .apple-input {
     @apply bg-white/70 border border-white/30 backdrop-blur-xl rounded-xl;
     box-shadow: var(--apple-shadow-sm);
+    background-color: rgba(255, 255, 255, 0.7);
   }
   
-  /* Theme utilities */
+  /* Theme utilities with fallbacks */
   .theme-primary {
     background: hsl(var(--theme-primary));
+    background-color: rgb(134 199 67); /* Fallback */
   }
   
   .theme-primary-light {
     background: hsl(var(--theme-primary-light));
+    background-color: rgba(134, 199, 67, 0.1); /* Fallback */
   }
   
   .theme-bg-light {
     background: hsl(var(--theme-bg-light));
+    background-color: rgba(134, 199, 67, 0.05); /* Fallback */
   }
   
   .theme-border {
     border-color: hsl(var(--theme-border));
+    border-color: rgba(134, 199, 67, 0.2); /* Fallback */
   }
   
   .theme-text {
     color: hsl(var(--theme-text));
+    color: rgb(22 101 52); /* Fallback */
   }
   
   /* Apple-style animations */
@@ -146,6 +176,12 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  
+  /* Background utilities with explicit fallbacks */
+  .bg-background {
+    background-color: hsl(var(--background));
+    background-color: rgb(248 250 252); /* Fallback */
   }
 }
 
@@ -199,8 +235,26 @@
 /* Minimal shadows for compatibility */
 .minimal-shadow {
   box-shadow: var(--apple-shadow-sm);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); /* Fallback */
 }
 
 .minimal-shadow-lg {
   box-shadow: var(--apple-shadow-lg);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); /* Fallback */
+}
+
+/* Force consistent background across all browsers */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Additional cross-browser fixes */
+@supports not (backdrop-filter: blur(20px)) {
+  .apple-glass,
+  .apple-card,
+  .apple-card-elevated,
+  .apple-button,
+  .apple-input {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+  }
 }
