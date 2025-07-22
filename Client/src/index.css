@@ -4,27 +4,27 @@
 
 @layer base {
   :root {
-    /* Corrected with commas */
-    --background: 248, 250, 252;
-    --foreground: 15, 23, 42;
-    --card: 255, 255, 255;
-    --card-foreground: 15, 23, 42;
-    --popover: 255, 255, 255;
-    --popover-foreground: 15, 23, 42;
-    --primary: 134, 199, 67;
-    --primary-foreground: 255, 255, 255;
-    --secondary: 241, 245, 249;
-    --secondary-foreground: 51, 65, 85;
-    --muted: 248, 250, 252;
-    --muted-foreground: 100, 116, 139;
-    --accent: 241, 245, 249;
-    --accent-foreground: 51, 65, 85;
-    --destructive: 239, 68, 68;
-    --destructive-foreground: 255, 255, 255;
-    --border: 226, 232, 240;
-    --input: 226, 232, 240;
-    --ring: 134, 199, 67;
-    --radius: 16px;
+    /* Base color variables - using space-separated values for hsl() */
+    --background: 248 250 252;
+    --foreground: 15 23 42;
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
+    --popover: 255 255 255;
+    --popover-foreground: 15 23 42;
+    --primary: 59 130 246;
+    --primary-foreground: 255 255 255;
+    --secondary: 241 245 249;
+    --secondary-foreground: 51 65 85;
+    --muted: 248 250 252;
+    --muted-foreground: 100 116 139;
+    --accent: 241 245 249;
+    --accent-foreground: 51 65 85;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --border: 226 232 240;
+    --input: 226 232 240;
+    --ring: 59 130 246;
+    --radius: 0.5rem;
 
     /* Apple-style custom properties */
     --apple-blur: blur(20px);
@@ -33,134 +33,164 @@
     --apple-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --apple-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     
-    /* Theme colors */
-    --theme-primary: 134, 199, 67;
-    --theme-primary-light: 134, 199, 67 / 0.1;
-    --theme-bg-light: 134, 199, 67 / 0.05;
-    --theme-border: 134, 199, 67 / 0.2;
-    --theme-text: 22, 101, 52;
+    /* Theme colors - using consistent blue theme */
+    --theme-primary: 59 130 246;
+    --theme-primary-light: 59 130 246 / 0.1;
+    --theme-bg-light: 59 130 246 / 0.05;
+    --theme-border: 59 130 246 / 0.2;
+    --theme-text: 30 64 175;
+
+    /* Sidebar variables */
+    --sidebar-background: 255 255 255;
+    --sidebar-foreground: 15 23 42;
+    --sidebar-primary: 59 130 246;
+    --sidebar-primary-foreground: 255 255 255;
+    --sidebar-accent: 241 245 249;
+    --sidebar-accent-foreground: 51 65 85;
+    --sidebar-border: 226 232 240;
+    --sidebar-ring: 59 130 246;
   }
 
   .dark {
-    /* Corrected with commas */
-    --background: 2, 6, 23;
-    --foreground: 248, 250, 252;
-    --card: 2, 6, 23;
-    --card-foreground: 248, 250, 252;
-    --popover: 2, 6, 23;
-    --popover-foreground: 248, 250, 252;
-    --primary: 134, 199, 67;
-    --primary-foreground: 255, 255, 255;
-    --secondary: 15, 23, 42;
-    --secondary-foreground: 248, 250, 252;
-    --muted: 15, 23, 42;
-    --muted-foreground: 148, 163, 184;
-    --accent: 15, 23, 42;
-    --accent-foreground: 248, 250, 252;
-    --destructive: 220, 38, 38;
-    --destructive-foreground: 248, 250, 252;
-    --border: 30, 41, 59;
-    --input: 30, 41, 59;
-    --ring: 134, 199, 67;
+    --background: 2 6 23;
+    --foreground: 248 250 252;
+    --card: 2 6 23;
+    --card-foreground: 248 250 252;
+    --popover: 2 6 23;
+    --popover-foreground: 248 250 252;
+    --primary: 59 130 246;
+    --primary-foreground: 255 255 255;
+    --secondary: 15 23 42;
+    --secondary-foreground: 248 250 252;
+    --muted: 15 23 42;
+    --muted-foreground: 148 163 184;
+    --accent: 15 23 42;
+    --accent-foreground: 248 250 252;
+    --destructive: 220 38 38;
+    --destructive-foreground: 248 250 252;
+    --border: 30 41 59;
+    --input: 30 41 59;
+    --ring: 59 130 246;
+
+    --sidebar-background: 15 23 42;
+    --sidebar-foreground: 248 250 252;
+    --sidebar-primary: 59 130 246;
+    --sidebar-primary-foreground: 255 255 255;
+    --sidebar-accent: 30 41 59;
+    --sidebar-accent-foreground: 248 250 252;
+    --sidebar-border: 30 41 59;
+    --sidebar-ring: 59 130 246;
   }
 }
 
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
   
   html {
-    /* Explicit background color for html element */
-    background-color: rgb(248 250 252); /* Same as --background */
+    background-color: hsl(var(--background));
+    font-family: 'Urbanist', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   }
   
   body {
-    @apply bg-background text-foreground font-sans;
-    /* Explicit fallback background color */
-    background-color: rgb(248 250 252);
+    @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Ensure full height */
     min-height: 100vh;
     margin: 0;
     padding: 0;
+    background-color: hsl(var(--background));
   }
   
-  /* Ensure root element has proper background */
   #root {
     min-height: 100vh;
-    background-color: rgb(248 250 252);
-    background: hsl(var(--background));
+    background-color: hsl(var(--background));
+  }
+
+  /* Safe area padding for mobile devices */
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-area-pt {
+    padding-top: env(safe-area-inset-top);
   }
 }
 
 @layer components {
-  /* Apple-style utilities */
+  /* Apple-style utilities with better fallbacks */
+  .apple-glass {
+    @apply bg-white/60 backdrop-blur-xl border border-white/20;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(20px);
+  }
+  
+  @supports not (backdrop-filter: blur(20px)) {
+    .apple-glass {
+      background: rgba(255, 255, 255, 0.95);
+    }
+  }
+  
   .apple-card {
-    @apply bg-white/70 backdrop-blur-xl border border-white/20 rounded-2xl;
-    box-shadow: var(--apple-shadow);
-    /* Fallback for browsers that don't support backdrop-filter */
-    background-color: rgba(255, 255, 255, 0.7);
+    @apply bg-white/70 border border-gray-200/50 rounded-2xl;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
   
   .apple-card-elevated {
-    @apply bg-white/80 backdrop-blur-xl border border-white/30 rounded-2xl;
-    box-shadow: var(--apple-shadow-lg);
-    background-color: rgba(255, 255, 255, 0.8);
-  }
-  
-  .apple-glass {
-    @apply bg-white/60 backdrop-blur-xl border border-white/20;
-    background-color: rgba(255, 255, 255, 0.6);
+    @apply bg-white/80 border border-gray-200/60 rounded-2xl;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   }
   
   .apple-button {
-    @apply bg-white/70 hover:bg-white/90 border border-white/30 backdrop-blur-xl rounded-xl transition-all duration-200;
-    box-shadow: var(--apple-shadow-sm);
-    background-color: rgba(255, 255, 255, 0.7);
+    @apply bg-white/70 hover:bg-white/90 border border-gray-200/50 rounded-xl transition-all duration-200;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
   }
   
   .apple-button:hover {
-    box-shadow: var(--apple-shadow);
     transform: translateY(-1px);
-    background-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
   
-  .apple-input {
-    @apply bg-white/70 border border-white/30 backdrop-blur-xl rounded-xl;
-    box-shadow: var(--apple-shadow-sm);
-    background-color: rgba(255, 255, 255, 0.7);
-  }
-  
-  /* Theme utilities with fallbacks */
+  /* Theme utilities with proper color values */
   .theme-primary {
-    background: hsl(var(--theme-primary));
-    background-color: rgb(134 199 67); /* Fallback */
+    background-color: hsl(var(--theme-primary));
+    color: hsl(var(--primary-foreground));
   }
   
   .theme-primary-light {
-    background: hsl(var(--theme-primary-light));
-    background-color: rgba(134, 199, 67, 0.1); /* Fallback */
+    background-color: hsl(var(--theme-primary) / 0.1);
   }
   
   .theme-bg-light {
-    background: hsl(var(--theme-bg-light));
-    background-color: rgba(134, 199, 67, 0.05); /* Fallback */
+    background-color: hsl(var(--theme-primary) / 0.05);
   }
   
   .theme-border {
-    border-color: hsl(var(--theme-border));
-    border-color: rgba(134, 199, 67, 0.2); /* Fallback */
+    border-color: hsl(var(--theme-primary) / 0.2);
   }
   
   .theme-text {
     color: hsl(var(--theme-text));
-    color: rgb(22 101 52); /* Fallback */
   }
   
-  /* Apple-style animations */
+  /* Shadow utilities */
+  .minimal-shadow {
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  }
+  
+  .minimal-shadow-lg {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  }
+  
+  /* Animation classes */
   .apple-fade-in {
     animation: apple-fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
@@ -172,21 +202,28 @@
   .apple-scale-in {
     animation: apple-scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
+
+  /* Legacy animation classes for compatibility */
+  .animate-fade-in {
+    animation: apple-fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  
+  .animate-slide-up {
+    animation: apple-slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  
+  .animate-scale-in {
+    animation: apple-scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
-  
-  /* Background utilities with explicit fallbacks */
-  .bg-background {
-    background-color: hsl(var(--background));
-    background-color: rgb(248 250 252); /* Fallback */
-  }
 }
 
-/* Apple-style keyframes */
+/* Keyframe animations */
 @keyframes apple-fade-in {
   from {
     opacity: 0;
@@ -220,42 +257,59 @@
   }
 }
 
-/* Legacy animations for compatibility */
-.animate-fade-in {
-  animation: apple-fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* Fix for caret-blink animation in OTP inputs */
+@keyframes caret-blink {
+  0%, 70%, 100% {
+    opacity: 1;
+  }
+  20%, 50% {
+    opacity: 0;
+  }
 }
 
-.animate-slide-up {
-  animation: apple-slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.animate-caret-blink {
+  animation: caret-blink 1s ease-out infinite;
 }
 
-.animate-scale-in {
-  animation: apple-scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-/* Minimal shadows for compatibility */
-.minimal-shadow {
-  box-shadow: var(--apple-shadow-sm);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); /* Fallback */
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 3px;
 }
 
-.minimal-shadow-lg {
-  box-shadow: var(--apple-shadow-lg);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); /* Fallback */
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 3px;
 }
 
-/* Force consistent background across all browsers */
-*, *::before, *::after {
-  box-sizing: border-box;
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
 }
 
-/* Additional cross-browser fixes */
-@supports not (backdrop-filter: blur(20px)) {
+/* Mobile-first responsive design */
+@media (max-width: 768px) {
   .apple-glass,
   .apple-card,
-  .apple-card-elevated,
-  .apple-button,
-  .apple-input {
-    background-color: rgba(255, 255, 255, 0.95) !important;
+  .apple-card-elevated {
+    border-radius: 1rem; /* 16px */
+  }
+  
+  .apple-button {
+    border-radius: 0.75rem; /* 12px */
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .apple-glass,
+  .apple-card,
+  .apple-card-elevated {
+    background: hsl(var(--card));
+    border-color: hsl(var(--border));
   }
 }
