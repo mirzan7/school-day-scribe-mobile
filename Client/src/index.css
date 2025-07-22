@@ -1,113 +1,128 @@
+/*
+ * =================================================================
+ * Tailwind CSS Directives
+ * =================================================================
+ */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * =================================================================
+ * Base Layer: Root variables and global styles
+ *
+ * Defines CSS custom properties for theming (light/dark mode),
+ * typography, and base element styling.
+ * =================================================================
+ */
 @layer base {
+  /* :root defines variables for the default (light) theme */
   :root {
-    /* Base color variables - using space-separated values for hsl() */
-    --background: 248 250 252;
-    --foreground: 15 23 42;
-    --card: 255 255 255;
-    --card-foreground: 15 23 42;
-    --popover: 255 255 255;
-    --popover-foreground: 15 23 42;
-    --primary: 59 130 246;
-    --primary-foreground: 255 255 255;
-    --secondary: 241 245 249;
-    --secondary-foreground: 51 65 85;
-    --muted: 248 250 252;
-    --muted-foreground: 100 116 139;
-    --accent: 241 245 249;
-    --accent-foreground: 51 65 85;
-    --destructive: 239 68 68;
-    --destructive-foreground: 255 255 255;
-    --border: 226 232 240;
-    --input: 226 232 240;
-    --ring: 59 130 246;
+    /* Color Palette (HSL format: H S% L%) */
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 220 33% 95%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 220 33% 95%;
+    --muted-foreground: 215 19% 47%;
+    --accent: 220 33% 95%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 215 28% 91%;
+    --input: 215 28% 91%;
+    --ring: 217 91% 60%;
+
+    /* Border Radius */
     --radius: 0.5rem;
 
-    /* Apple-style custom properties */
+    /* Apple-style Effect Variables */
     --apple-blur: blur(20px);
     --apple-shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     --apple-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --apple-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --apple-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     
-    /* Theme colors - using consistent blue theme */
-    --theme-primary: 59 130 246;
-    --theme-primary-light: 59 130 246 / 0.1;
-    --theme-bg-light: 59 130 246 / 0.05;
-    --theme-border: 59 130 246 / 0.2;
-    --theme-text: 30 64 175;
+    /* Custom Theme Accent Colors */
+    --theme-primary: 217 91% 60%;
+    --theme-primary-light: 217 91% 60% / 0.1;
+    --theme-bg-light: 217 91% 60% / 0.05;
+    --theme-border: 217 91% 60% / 0.2;
+    --theme-text: 224 70% 40%;
 
-    /* Sidebar variables */
-    --sidebar-background: 255 255 255;
-    --sidebar-foreground: 15 23 42;
-    --sidebar-primary: 59 130 246;
-    --sidebar-primary-foreground: 255 255 255;
-    --sidebar-accent: 241 245 249;
-    --sidebar-accent-foreground: 51 65 85;
-    --sidebar-border: 226 232 240;
-    --sidebar-ring: 59 130 246;
+    /* Sidebar Variables */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 220 33% 95%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 215 28% 91%;
+    --sidebar-ring: 217 91% 60%;
   }
 
+  /* .dark redefines variables for the dark theme */
   .dark {
-    --background: 2 6 23;
-    --foreground: 248 250 252;
-    --card: 2 6 23;
-    --card-foreground: 248 250 252;
-    --popover: 2 6 23;
-    --popover-foreground: 248 250 252;
-    --primary: 59 130 246;
-    --primary-foreground: 255 255 255;
-    --secondary: 15 23 42;
-    --secondary-foreground: 248 250 252;
-    --muted: 15 23 42;
-    --muted-foreground: 148 163 184;
-    --accent: 15 23 42;
-    --accent-foreground: 248 250 252;
-    --destructive: 220 38 38;
-    --destructive-foreground: 248 250 252;
-    --border: 30 41 59;
-    --input: 30 41 59;
-    --ring: 59 130 246;
+    --background: 227 83% 5%;
+    --foreground: 210 40% 98%;
+    --card: 227 83% 5%;
+    --card-foreground: 210 40% 98%;
+    --popover: 227 83% 5%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 47% 11%;
+    --muted-foreground: 215 25% 65%;
+    --accent: 222 47% 11%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 221 33% 17%;
+    --input: 221 33% 17%;
+    --ring: 217 91% 60%;
 
-    --sidebar-background: 15 23 42;
-    --sidebar-foreground: 248 250 252;
-    --sidebar-primary: 59 130 246;
-    --sidebar-primary-foreground: 255 255 255;
-    --sidebar-accent: 30 41 59;
-    --sidebar-accent-foreground: 248 250 252;
-    --sidebar-border: 30 41 59;
-    --sidebar-ring: 59 130 246;
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 221 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 221 33% 17%;
+    --sidebar-ring: 217 91% 60%;
   }
-}
-
-@layer base {
+  
+  /* Global element styles */
   * {
     @apply border-border;
     box-sizing: border-box;
   }
   
   html {
-    background-color: hsl(var(--background));
     font-family: 'Urbanist', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    background-color: hsl(var(--background));
+    color-scheme: light dark;
   }
   
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
     margin: 0;
     padding: 0;
-    background-color: hsl(var(--background));
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   #root {
     min-height: 100vh;
-    background-color: hsl(var(--background));
   }
 
   /* Safe area padding for mobile devices */
@@ -120,77 +135,91 @@
   }
 }
 
+/*
+ * =================================================================
+ * Components Layer: Reusable UI component styles
+ *
+ * Defines custom component classes like cards, buttons, etc.
+ * Uses @apply to leverage Tailwind's utility classes.
+ * =================================================================
+ */
 @layer components {
-  /* Apple-style utilities with better fallbacks */
+  /* Apple-style "glassmorphism" components that respect themes */
   .apple-glass {
-    @apply bg-white/60 backdrop-blur-xl border border-white/20;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(20px);
+    background-color: hsl(var(--card) / 0.6);
+    border-color: hsl(var(--card) / 0.2);
+    backdrop-filter: var(--apple-blur);
   }
   
-  @supports not (backdrop-filter: blur(20px)) {
+  /* Fallback for browsers that don't support backdrop-filter */
+  @supports not (backdrop-filter: var(--apple-blur)) {
     .apple-glass {
-      background: rgba(255, 255, 255, 0.95);
+      background-color: hsl(var(--card) / 0.95);
     }
   }
   
   .apple-card {
-    @apply bg-white/70 border border-gray-200/50 rounded-2xl;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(20px);
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    background-color: hsl(var(--card) / 0.7);
+    border: 1px solid hsl(var(--border) / 0.5);
+    @apply rounded-2xl;
+    backdrop-filter: var(--apple-blur);
+    box-shadow: var(--apple-shadow);
   }
   
   .apple-card-elevated {
-    @apply bg-white/80 border border-gray-200/60 rounded-2xl;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(20px);
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    background-color: hsl(var(--card) / 0.8);
+    border: 1px solid hsl(var(--border) / 0.6);
+    @apply rounded-2xl;
+    backdrop-filter: var(--apple-blur);
+    box-shadow: var(--apple-shadow-lg);
   }
   
   .apple-button {
-    @apply bg-white/70 hover:bg-white/90 border border-gray-200/50 rounded-xl transition-all duration-200;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    background-color: hsl(var(--card) / 0.7);
+    border: 1px solid hsl(var(--border) / 0.5);
+    @apply text-foreground rounded-xl transition-all duration-200;
+    backdrop-filter: var(--apple-blur);
+    box-shadow: var(--apple-shadow-sm);
   }
   
   .apple-button:hover {
+    background-color: hsl(var(--card) / 0.9);
     transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    box-shadow: var(--apple-shadow);
   }
   
-  /* Theme utilities with proper color values */
+  /* Custom theme color utilities */
   .theme-primary {
     background-color: hsl(var(--theme-primary));
     color: hsl(var(--primary-foreground));
   }
   
   .theme-primary-light {
-    background-color: hsl(var(--theme-primary) / 0.1);
+    background-color: hsl(var(--theme-primary-light));
   }
   
   .theme-bg-light {
-    background-color: hsl(var(--theme-primary) / 0.05);
+    background-color: hsl(var(--theme-bg-light));
   }
   
   .theme-border {
-    border-color: hsl(var(--theme-primary) / 0.2);
+    border-color: hsl(var(--theme-border));
   }
   
   .theme-text {
     color: hsl(var(--theme-text));
   }
   
-  /* Shadow utilities */
+  /* Shadow utilities using variables */
   .minimal-shadow {
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    box-shadow: var(--apple-shadow-sm);
   }
   
   .minimal-shadow-lg {
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    box-shadow: var(--apple-shadow-lg);
   }
   
-  /* Animation classes */
+  /* Animation utility classes */
   .apple-fade-in {
     animation: apple-fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
@@ -203,26 +232,40 @@
     animation: apple-scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
-  /* Legacy animation classes for compatibility */
+  /* Legacy animation classes (for compatibility) */
   .animate-fade-in {
-    animation: apple-fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    @apply apple-fade-in;
   }
   
   .animate-slide-up {
-    animation: apple-slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    @apply apple-slide-up;
   }
   
   .animate-scale-in {
-    animation: apple-scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    @apply apple-scale-in;
   }
 }
 
+/*
+ * =================================================================
+ * Utilities Layer: Low-level utility classes
+ *
+ * Defines specific, single-purpose utility classes.
+ * =================================================================
+ */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
 }
 
+/*
+ * =================================================================
+ * Keyframes & Global Styles
+ *
+ * Defines animations and other global styles like scrollbars.
+ * =================================================================
+ */
 /* Keyframe animations */
 @keyframes apple-fade-in {
   from {
@@ -257,7 +300,7 @@
   }
 }
 
-/* Fix for caret-blink animation in OTP inputs */
+/* Custom caret animation for OTP inputs */
 @keyframes caret-blink {
   0%, 70%, 100% {
     opacity: 1;
@@ -271,7 +314,7 @@
   animation: caret-blink 1s ease-out infinite;
 }
 
-/* Scrollbar styling */
+/* Custom scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -311,5 +354,4 @@
   .apple-card-elevated {
     background: hsl(var(--card));
     border-color: hsl(var(--border));
-  }
-}
+  }}
