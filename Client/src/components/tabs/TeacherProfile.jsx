@@ -280,7 +280,7 @@ const TeacherProfile = ({ user, handleLogout, isAddingReport = false }) => {
 
             <div className="text-center pt-4">
                 <p className="text-xs text-muted-foreground">
-                    School Reporter v1.0.0 • Auto-refresh: {isAddingReport ? 'Paused' : 'Every 5 min'}
+                    School Reporter v1.0.0 • 
                 </p>
             </div>
         </div>

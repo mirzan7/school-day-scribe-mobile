@@ -21,10 +21,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from datetime import date
 from rest_framework import status
+
 from datetime import datetime, timedelta
 from django.utils import timezone
 # from django.utils import timezone
-
 
 class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
